@@ -34,22 +34,9 @@
 .codex-editor {
   border: 1px solid #ccc;
   padding: 16px;
-  min-height: 300px;
+  min-height: 100px;
 }
 /* end of editor js css */
-
-.logo {
-  height: 6em;
-  padding: 1.5em;
-  will-change: filter;
-  transition: filter 300ms;
-}
-.logo:hover {
-  filter: drop-shadow(0 0 2em #646cffaa);
-}
-.logo.react:hover {
-  filter: drop-shadow(0 0 2em #61dafbaa);
-}
 
 @keyframes logo-spin {
   from {
@@ -70,6 +57,3 @@
   padding: 2em;
 }
 
-.read-the-docs {
-  color: #888;
-}

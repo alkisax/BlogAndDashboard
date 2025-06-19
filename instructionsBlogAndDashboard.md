@@ -9,6 +9,18 @@ git add .
 git commit -m "Initial commit"
 git checkout -b wip
 ```
+- Με `git log --oneline` βλεπω τα commit μου. Πχ
+```bash
+$ git log --oneline
+dc0fb5a (HEAD -> wip, origin/wip) feat: Editorjs component - basic functionality
+83739ba minor
+84f1853 wip: failing on initial editor.js
+86863f2 wip: create basics
+fb442c7 (origin/main, main) Initial commit
+d4ef566 Initial commit
+```
+- θελω να κάνω merge στο main μόνο το τελευταιο commit Που έχω κάτι διμηουργημένο
+
 
 ## δημιουργία frontend
 ```
@@ -92,6 +104,40 @@ npm install @editorjs/marker
 npm install @editorjs/inline-code
 npm install @editorjs/image
 npm install editorjs-text-alignment-blocktune
+```
+- **IMPORTNAT** χρειάζετε να προσθέσω styling στο css
+#### frontend\src\App.css
+```css
+/* editor js css */
+.ce-block--aligned-left {
+  text-align: left;
+}
+
+.ce-block--aligned-center {
+  text-align: center;
+}
+
+.ce-block--aligned-right {
+  text-align: right;
+}
+
+.ce-block {
+  border: 1px solid #ddd;
+  padding: 8px;
+  margin-bottom: 8px;
+}
+
+.ce-toolbar__plus,
+.ce-toolbar__settings-btn {
+  display: inline-block;
+}
+
+.codex-editor {
+  border: 1px solid #ccc;
+  padding: 16px;
+  min-height: 300px;
+}
+/* end of editor js css */
 ```
 
 #### frontend\src\components\EditorJs.jsx
