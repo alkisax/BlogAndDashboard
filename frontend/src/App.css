@@ -7,6 +7,18 @@
   text-align: center;
 }
 
+/* editor js css */
+.ce-block--aligned-left {
+  text-align: left;
+}
+
+.ce-block--aligned-center {
+  text-align: center;
+}
+
+.ce-block--aligned-right {
+  text-align: right;
+}
 
 .ce-block {
   border: 1px solid #ddd;
@@ -24,7 +36,7 @@
   padding: 16px;
   min-height: 300px;
 }
-
+/* end of editor js css */
 
 .logo {
   height: 6em;
