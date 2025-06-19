@@ -1,6 +1,4 @@
-```
-npm init
-```
+# Git
 ```
 git init
 git remote add origin git@github.com:alkisax/BlogAndDashboard.git
@@ -20,9 +18,23 @@ fb442c7 (origin/main, main) Initial commit
 d4ef566 Initial commit
 ```
 - θελω να κάνω merge στο main μόνο το τελευταιο commit Που έχω κάτι διμηουργημένο
+- στο main, μπορείς να πεις στο Git:
+```bash
+git checkout main
+# Αυτό αντιγράφει ΟΛΑ τα αρχεία από το wip στο main χωρίς ιστορικό, σαν να έγραψες το νέο κώδικα τώρα.
+git checkout wip -- .
+git add .
+git commit -m "feat: Add EditorJS blog component with image and layout"
+git push origin main
+```
+- αυτή η λύση δεν μου αρέσει πολύ αλλα θα το δω ξανα στο επόμενο σοβαρο commit γιατί τώρα δούλεψε
 
-
-## δημιουργία frontend
+# δημιουργία βασικού frontend/backend
+### backend
+```
+npm init
+```
+### frontend
 ```
 npm create vite@latest frontend -- --template react
 npm install
@@ -51,7 +63,7 @@ function App() {
 export default App
 ```
 
-## δοκιμή με editor js
+# δοκιμή με editor js
 ```
 npm install @editorjs/editorjs react-editor-js
 npm install @editorjs/paragraph @editorjs/header @editorjs/list
