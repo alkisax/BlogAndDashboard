@@ -157,6 +157,9 @@ npm install editorjs-text-alignment-blocktune
 /* end of editor js css */
 ```
 
+- **IMPORTNAT** χρειάζετε να προσθέσω     `<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@editorjs/editorjs@latest/dist/editor.css">` στο frontend\index.html  
+
+
 #### frontend\src\components\EditorJs.jsx
 ```jsx
 import React, { useEffect, useRef } from 'react';
@@ -254,4 +257,4 @@ const EditorJs = () => {
 export default EditorJs
 ```
 
-  
+## αποθήκευση του editor στο localmemory και προβολή του

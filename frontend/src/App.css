@@ -27,7 +27,7 @@
 .codex-editor {
   border: 1px solid #ccc;
   padding: 16px;
-  min-height: 100px;
+  min-height: 300px;
 }
 /* Ευθυγράμμιση των blocks με βάση την επιλογή του χρήστη από το εργαλείο alignment */
 .ce-block--aligned-left {

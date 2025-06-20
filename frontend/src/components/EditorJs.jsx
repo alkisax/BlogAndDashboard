@@ -10,7 +10,7 @@ import ImageTool from '@editorjs/image';
 
 import AlignmentTuneTool from 'editorjs-text-alignment-blocktune';
 
-const EditorJs = () => {
+const EditorJs = ({ editorJsData, setEditorJsData }) => {
   // χρειάζομαι μια μεταβλητή για να φορτωσω το Instance απο τον κειμενογράφο
   const editorRef = useRef(null);
 
@@ -80,13 +80,31 @@ const EditorJs = () => {
     };
   }, []);
 
+  const handleSubmit = async () => {
+    if(editorRef.current) {
+      try {
+        //  η save() ερχεται απο τον editorjs και επιστρέφει μια υπόσχεση με τα δεδομένα του editor
+        const outputData = await editorRef.current.save()
+        localStorage.setItem('editorData', JSON.stringify(outputData));
+        setEditorJsData(outputData);
+        console.log('Data saved:', outputData);
+        console.log('editorJsData', editorJsData);
+        
+      } catch (error) {
+        console.error("saving failed", error)
+      };
+    }
+  }
+
   return (
-    
     <>
       <div 
         id="editorjs" 
         style={{ border: '2px solid blue', padding: '4px', minHeight: '300px' }} 
       />
+      <button onClick={handleSubmit}>
+        submit
+      </button>
     </>
   )
 }
