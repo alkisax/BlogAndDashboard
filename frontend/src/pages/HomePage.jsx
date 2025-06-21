@@ -1,4 +1,4 @@
-import EditorJs from "../components/EditorJS";
+import EditorJs from "../components/EditorJs";
 
 function HomePage({ editorJsData, setEditorJsData }) {
 

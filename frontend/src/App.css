@@ -8,20 +8,9 @@
 }
 
 /* editor js css */
-/* Στυλ για κάθε block του Editor.js — προσθέτει περίγραμμα, padding και απόσταση από το επόμενο block */
-.ce-block {
-  border: 1px solid #e6f1c0;
-  padding: 8px;
-  margin-bottom: 8px;
-}
-/* Στυλ για παράγραφο - στοίχιση justify */
-.ce-paragraph {
+.ce-paragraph[data-align="justify"],
+.ce-block--aligned-justify {
   text-align: justify;
-}
-/* Εμφάνιση των κουμπιών + (προσθήκη block) και ρυθμίσεων στα δεξιά κάθε block */
-.ce-toolbar__plus,
-.ce-toolbar__settings-btn {
-  display: inline-block; 
 }
 /* Στυλ για ολόκληρο το editor container — εμφανές περίγραμμα, padding και ελάχιστο ύψος */
 .codex-editor {
@@ -33,11 +22,6 @@
 .ce-block--aligned-left {
   text-align: left;
 }
-
-.ce-block--aligned-center {
-  text-align: center;
-}
-
 .ce-block--aligned-right {
   text-align: right;
 }
