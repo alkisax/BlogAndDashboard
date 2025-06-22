@@ -394,3 +394,98 @@ const [editorJsData, setEditorJsData] = useState({})
       </div>
 ```
 
+#### .env
+```
+MONGODB_URI = mongodb+srv://alkisax:{---}@cluster0.8ioq6.mongodb.net/blogAndDashboard?retryWrites=true&w=majority&appName=Cluster0
+MONGODB_TEST_URI = mongodb+srv://alkisax:{---}@cluster0.8ioq6.mongodb.net/blogAndDashboard_TEST?retryWrites=true&w=majority&appName=Cluster0
+
+BACK_END_PORT = 3001
+APP_URL=http://localhost:3001
+FRONTEND_URL=http://localhost:5173
+BACKEND_URL=http://localhost:3001
+```
+
+## depndancies back
+```bash
+npm install express
+npm install body-parser
+npm install mongoose
+npm install multer
+npm install dotenv
+npm install cors
+npm install swagger-ui-expres
+npm install mongoose-to-swagger
+npm install swagger-jsdoc
+npm install --save-dev jest
+```
+
+- τα δύο παρακάτω αρχεία τα αντέγραψα απο το angularTodoApp
+- χρησιμοποίησα το tutorial `https://www.geeksforgeeks.org/upload-and-retrieve-image-on-mongodb-using-mongoose/`
+
+#### backend\server.js
+```js
+require('dotenv').config();
+const mongoose = require('mongoose');
+const app = require('./app'); 
+
+const PORT = process.env.BACK_END_PORT || 3001
+
+mongoose.set('strictQuery', false);
+// συνδεση με την MongoDB
+mongoose.connect(process.env.MONGODB_URI)
+  .then(() => {
+    console.log('connected to MongoDB');
+    console.log('Routes setup complete. Starting server...');
+// εδώ είναι το βασικό listen PORT μου
+    app.listen(PORT, () => {
+      // το εκανα σαν λινκ για να είναι clickable
+      console.log(`Server running on port http://localhost:${PORT}`);
+    });
+  })
+  .catch((error) => {
+    console.error('error connecting to MongoDB:', error.message);
+  });
+```
+
+#### backend\app.js
+```js
+const express = require('express')
+const cors = require('cors')
+const swaggerUi = require('swagger-ui-express');
+// const swaggerSpec = require('./utils/swagger');
+// θα προστεθούν πολλα τέτοια endpoints οπως προχωρά η εφαρμογη
+// const todoRoutes = require('./routes/todo.routes')
+
+// αυτό ειναι κάτι που ίσως μου χρειαστεί στο deploy και δεν το καταλαβαίνω καλα. (και παρακάτω μαζί με αυτό)
+const path = require('path'); // requires explanation. added for rendering front page subpages
+
+const app = express()
+app.use(cors())
+app.use(express.json());
+
+// ενας logger για να καταγράφει το backend τις κλήσεις
+app.use((req, res, next) => {
+  console.log("Request reached Express!");
+  console.log(`Incoming request: ${req.method} ${req.path}`);
+  next();
+});
+
+// θα προστεθούν πολλα τέτοια endpoints οπως προχωρά η εφαρμογη
+// app.use('/api/todo', todoRoutes)
+app.use('/ping', (req, res) => {
+  res.json({ message: 'pong' });
+})
+
+// swagger test page
+// app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec))
+
+// για να σερβίρει τον φακελο dist του front μετα το npm run build
+app.use(express.static('dist'))
+
+//αυτο είναι για να σερβίρει το index.html του front όταν ο χρήστης επισκέπτεται το root path ή οποιοδήποτε άλλο path που δεν είναι api ή api-docs
+app.get(/^\/(?!api|api-docs).*/, (req, res) => {
+  res.sendFile(path.resolve(__dirname, 'dist', 'index.html'));
+});
+
+module.exports = app
+```
