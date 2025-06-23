@@ -1,5 +1,5 @@
 // fs = files system
-const fs = require('fs');
+const fs = require('fs').promises;  // note: require fs.promises
 // Node.js's built-in path module, which helps you safely work with file and folder paths
 const path = require('path');
 const imgDao = require('../daos/img.dao');
@@ -14,26 +14,44 @@ const renderImagePage = async (req, res) => {
   }
 };
 
+
 const uploadImage = async (req, res) => {
+  console.log('enter uploadImage controller' );
+  //ελενγχουμε το req απο τον client αν έχει οτι χρειάζεται
   try {
+    if (!req.file || !req.body.name) {
+      return res.status(400).json({ error: 'Missing required fields' });
+    }
+
+    // το filepath και το obj τα παίρνουμε από το req.file που έχει δημιουργηθεί από το multer middleware
+    const filePath = req.file.path; 
+    console.log('File path:', filePath);
+    
+    //Όταν το readFile() τελειώσει: Αν όλα πήγαν καλά, αποθηκεύει το περιεχόμενο του αρχείου (σε μορφή Buffer) στη μεταβλητή data. Αυτός ο Buffer είναι το "raw binary" του αρχείου. Αν και το multer έχει ήδη αποθηκεύσει το αρχείο στο φάκελο uploads, εμείς εδώ το διαβάζουμε ξανά: 👉 για να το μετατρέψουμε σε binary δεδομένα,👉 ώστε να το αποθηκεύσουμε μέσα στη MongoDB (σε ένα document, όχι ως αρχείο στο δίσκο).
+    // Συμαντικό: για να λειτουργήσει το fs.readFile() πρέπει να χρησιμοποιήσουμε την υπόσχεση (Promise) του fs.promises, όχι το απλό fs: επάνω στις δηλώσεις: const fs = require('fs').promises;
+    const data = await fs.readFile(filePath); 
+    console.log('data:', data);
+    
+
     const obj = {
       name: req.body.name,
-      desc: req.body.desc,
+      desc: req.body.desc || '',
       img: {
-        // 🔹 __dirname A Node.js variable that gives the absolute path of the current file.
-        //  '../../uploads/' + req.file.filename Goes two folders up from the current file (e.g. from controllers/ → backend/) Then into the uploads/ folderThen adds the uploaded file name (e.g. image-1722188911)
-        // path.join(...) Combines paths safely
-        data: fs.readFileSync(path.join(__dirname, '../../uploads/' + req.file.filename)),
-        contentType: 'image/png'
+        data,
+        contentType: req.file.mimetype
       }
     };
+    console.log('Image object:', obj);
+    
+    // εδω με το imgDao το στελνουμε στην mongo ή αποθήκευση ως αρχείο έχει γίνει ήδη απο τον multer middleware
     await imgDao.createImage(obj);
-    res.status(200).json({ message: "image uploaded" });
+    res.status(200).json({ message: 'image uploaded' });
   } catch (err) {
-    console.error(err);
+    console.error('Upload error:', err);
     res.status(500).send('Upload failed');
   }
 };
+
 
 module.exports = {
   renderImagePage,

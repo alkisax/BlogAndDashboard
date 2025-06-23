@@ -404,8 +404,9 @@ APP_URL=http://localhost:3001
 FRONTEND_URL=http://localhost:5173
 BACKEND_URL=http://localhost:3001
 ```
+# Back end για upload εικονων σε φακελο και mongo
 
-## depndancies back
+## dependancies back
 ```bash
 npm install express
 npm install body-parser
@@ -413,11 +414,12 @@ npm install mongoose
 npm install multer
 npm install dotenv
 npm install cors
-npm install swagger-ui-expres
+npm install swagger-ui-express
 npm install mongoose-to-swagger
 npm install swagger-jsdoc
 npm install --save-dev jest
 ```
+
 
 - τα δύο παρακάτω αρχεία τα αντέγραψα απο το angularTodoApp
 - χρησιμοποίησα το tutorial `https://www.geeksforgeeks.org/upload-and-retrieve-image-on-mongodb-using-mongoose/`
@@ -452,9 +454,10 @@ mongoose.connect(process.env.MONGODB_URI)
 const express = require('express')
 const cors = require('cors')
 const swaggerUi = require('swagger-ui-express');
-// const swaggerSpec = require('./utils/swagger');
+const swaggerSpec = require('./utils/swagger');
 // θα προστεθούν πολλα τέτοια endpoints οπως προχωρά η εφαρμογη
 // const todoRoutes = require('./routes/todo.routes')
+const imgRoutes = require('./routes/img.routes'); 
 
 // αυτό ειναι κάτι που ίσως μου χρειαστεί στο deploy και δεν το καταλαβαίνω καλα. (και παρακάτω μαζί με αυτό)
 const path = require('path'); // requires explanation. added for rendering front page subpages
@@ -473,11 +476,12 @@ app.use((req, res, next) => {
 // θα προστεθούν πολλα τέτοια endpoints οπως προχωρά η εφαρμογη
 // app.use('/api/todo', todoRoutes)
 app.use('/ping', (req, res) => {
-  res.json({ message: 'pong' });
+  res.status(200).json({ message: 'pong' });
 })
+app.use('/api/images', imgRoutes)
 
 // swagger test page
-// app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec))
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec))
 
 // για να σερβίρει τον φακελο dist του front μετα το npm run build
 app.use(express.static('dist'))
@@ -488,4 +492,250 @@ app.get(/^\/(?!api|api-docs).*/, (req, res) => {
 });
 
 module.exports = app
+```
+## Upload και Mongo
+
+- θα φτιαξώ μια βασική αρχιτεκτονική. 
+1. το backend\services\multer.service.js είναι υπεύθυνο για να κάνει το upload και την αποθήκευση της εικόνας
+2. το backend\models\img.model.js εχει το mongoose schema και έχει τις εντολές της mongoose
+3. το backend\daos\img.dao.js λυτουργεί ως ενδιάμεσο dao με την βαση δεδομένων για λόγους ασφαλείας (ή αλλαγής βάσης)
+4. το backend\controllers\img.controller.js εχει μέσα την λογική μου και ασχολείτε με το upload και render (καλόντας το dao)
+5. backend\routes\img.routes.js τα paths μου, η αντιστοίχηση με τις εντολες του controller 
+6. backend\utils\swagger.js
+
+1. #### το backend\services\multer.service.js 
+```js
+const multer = require('multer');
+const path = require('path');
+
+// μέθοδος που δημιουργεί έναν τρόπο αποθήκευσης αρχείων στο δίσκο (στον υπολογιστή). Με αυτήν καθορίζουμε πού θα αποθηκευτεί το αρχείο και πώς θα ονομαστεί.
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    console.log('reached multer service');   
+    // null -> το δεχόμαστε, path.join(__dirname, '../uploads') -> ο φάκελος που θα αποθηκευτούν τα αρχεία
+    cb(null, path.join(__dirname, '../uploads'));
+  },
+  // πως θα ονομαστεί το αρχείο όταν αποθηκευτεί
+  filename: (req, file, cb) => {
+    const ext = path.extname(file.originalname);
+    cb(null, file.fieldname + '-' + Date.now() + ext);
+  }
+});
+
+// αυτό είναι ένας middleware που θα πιάσει το αρχείο που θα στείλει ο χρήστης και θα το αποθηκεύσει στον φάκελο uploads
+const upload = multer({ 
+  // καθοριζει που θα αποθηκεύονται τα αρχεία οριζετε στην παραπάνω const
+  storage,
+  // Το fileFilter είναι μια συνάρτηση που ελέγχει κάθε αρχείο πριν αποθηκευτεί.
+  fileFilter: (req, file, cb) => {
+    console.log('reached multer upload');
+    // παιρνει τοn τύπο του αρχειου πχ png jpg κλπ
+    const ext = path.extname(file.originalname);
+    console.log('Uploading file:', file.originalname, file.mimetype);
+    // callback συνάρτηση που πρέπει να καλέσεις για να πεις αν αποδεχεσαι το αρχείο ή όχι.
+    cb(null, true);
+  }
+});
+
+module.exports = upload;
+
+
+/*
+Παράδειγμα φίλτρου που δέχεται μόνο εικόνες .jpg ή .png
+js
+Αντιγραφή κώδικα
+fileFilter: (req, file, cb) => {
+  const ext = path.extname(file.originalname).toLowerCase();
+  if(ext === '.jpg' || ext === '.jpeg' || ext === '.png'){
+    cb(null, true); // αποδεκτό αρχείο
+  } else {
+    cb(new Error('Only images are allowed'), false); // απορρίπτω
+  }
+}
+*/
+```
+
+2. #### backend\models\img.model.js
+```js
+const mongoose = require('mongoose');
+
+const imageSchema = new mongoose.Schema({
+  name: String,
+  desc: String,
+  img: {
+    data: Buffer,
+    contentType: String
+  }
+});
+
+module.exports = mongoose.model('Image', imageSchema);
+```
+
+3. #### backend\daos\img.dao.js
+```js
+const Image = require('../models/img.model');
+
+const getAllImages = () => {
+ return Image.find({});
+}
+const createImage = (imageData) => {
+  return Image.create(imageData)
+};
+
+module.exports = {
+  getAllImages,
+  createImage
+};
+```
+
+4. #### backend\controllers\img.controller.js
+```js
+// fs = files system
+const fs = require('fs').promises;  // note: require fs.promises
+// Node.js's built-in path module, which helps you safely work with file and folder paths
+const path = require('path');
+const imgDao = require('../daos/img.dao');
+
+//TODO LATER
+const renderImagePage = async (req, res) => {
+  try {
+    const items = await imgDao.getAllImages();
+    res.json(items);
+  } catch (err) {
+    console.error(err);
+    res.status(500).send('Server error');
+  }
+};
+
+
+const uploadImage = async (req, res) => {
+  console.log('enter uploadImage controller' );
+  //ελενγχουμε το req απο τον client αν έχει οτι χρειάζεται
+  try {
+    if (!req.file || !req.body.name) {
+      return res.status(400).json({ error: 'Missing required fields' });
+    }
+
+    // το filepath και το obj τα παίρνουμε από το req.file που έχει δημιουργηθεί από το multer middleware
+    const filePath = req.file.path; 
+    console.log('File path:', filePath);
+    
+    //Όταν το readFile() τελειώσει: Αν όλα πήγαν καλά, αποθηκεύει το περιεχόμενο του αρχείου (σε μορφή Buffer) στη μεταβλητή data. Αυτός ο Buffer είναι το "raw binary" του αρχείου. Αν και το multer έχει ήδη αποθηκεύσει το αρχείο στο φάκελο uploads, εμείς εδώ το διαβάζουμε ξανά: 👉 για να το μετατρέψουμε σε binary δεδομένα,👉 ώστε να το αποθηκεύσουμε μέσα στη MongoDB (σε ένα document, όχι ως αρχείο στο δίσκο).
+    // Συμαντικό: για να λειτουργήσει το fs.readFile() πρέπει να χρησιμοποιήσουμε την υπόσχεση (Promise) του fs.promises, όχι το απλό fs: επάνω στις δηλώσεις: const fs = require('fs').promises;
+    const data = await fs.readFile(filePath); 
+    console.log('data:', data);
+    
+
+    const obj = {
+      name: req.body.name,
+      desc: req.body.desc || '',
+      img: {
+        data,
+        contentType: req.file.mimetype
+      }
+    };
+    console.log('Image object:', obj);
+    
+    // εδω με το imgDao το στελνουμε στην mongo ή αποθήκευση ως αρχείο έχει γίνει ήδη απο τον multer middleware
+    await imgDao.createImage(obj);
+    res.status(200).json({ message: 'image uploaded' });
+  } catch (err) {
+    console.error('Upload error:', err);
+    res.status(500).send('Upload failed');
+  }
+};
+
+
+module.exports = {
+  renderImagePage,
+  uploadImage
+};
+```
+
+5. #### backend\routes\img.routes.js
+```js
+const express = require('express');
+const router = express.Router();
+const upload = require('../services/multer.service');
+const imgController = require('../controllers/img.controller');
+
+/**
+ * @swagger
+ * /api/images:
+ *   get:
+ *     summary: Get all uploaded images
+ *     tags: [Images]
+ *     responses:
+ *       200:
+ *         description: A list of uploaded images
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 $ref: '#/components/schemas/Image'
+ *       500:
+ *         description: Server error
+ */
+router.get('/', imgController.renderImagePage);
+
+/**
+ * @swagger
+ * /api/images:
+ *   post:
+ *     summary: Upload a new image
+ *     tags: [Images]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         multipart/form-data:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               name:
+ *                 type: string
+ *               desc:
+ *                 type: string
+ *               image:
+ *                 type: file
+ *                 format: binary
+ *     responses:
+ *       200:
+ *         description: Image uploaded successfully
+ *       500:
+ *         description: Upload failed
+ */
+router.post('/', upload.single('image'), imgController.uploadImage);
+
+module.exports = router;
+```
+
+6. #### backend\utils\swagger.js
+
+```js
+const m2s = require('mongoose-to-swagger');
+const Image = require('../models/img.model')
+const swaggerJsdoc = require('swagger-jsdoc')
+
+const options = {
+  definition: {
+    openapi: "3.1.0",
+    info: {
+      version: "1.0.0",
+      title: "blog and dashboard",
+      description: "basic dahshboard",
+    },
+    components: {
+      schemas: {
+        Image: m2s(Image)
+      },
+    },
+  },
+  // 👇 This is the critical part: tell swagger-jsdoc where to find your route/controller annotations
+  apis: ['./routes/*.js', './controllers/*.js'], // adjust paths if needed
+};
+
+const swaggerSpec = swaggerJsdoc(options);
+
+module.exports = swaggerSpec;
 ```

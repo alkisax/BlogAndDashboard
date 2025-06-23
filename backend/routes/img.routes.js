@@ -22,6 +22,7 @@ const imgController = require('../controllers/img.controller');
  *         description: Server error
  */
 router.get('/', imgController.renderImagePage);
+
 /**
  * @swagger
  * /api/images:
@@ -40,7 +41,7 @@ router.get('/', imgController.renderImagePage);
  *               desc:
  *                 type: string
  *               image:
- *                 type: string
+ *                 type: file
  *                 format: binary
  *     responses:
  *       200:
