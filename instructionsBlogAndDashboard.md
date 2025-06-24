@@ -739,3 +739,53 @@ const swaggerSpec = swaggerJsdoc(options);
 
 module.exports = swaggerSpec;
 ```
+
+## εμφάνηση του περιεχομένου σε άλλο div και αλλαγές στο upload
+
+#### backend\controllers\img.controller.js
+```js
+//εδω μικρή αλλαγή
+    if (!req?.file?.path) {
+      return res.status(400).json({ error: 'Missing required fields' });
+    }
+// το res πρέπει να γίνει σε άλλη μορφή για να ταιριάζει με τις προυποθέσεις του editroJs
+    res.status(200).json({
+      success: 1,
+      file: {
+        url: `http://localhost:3001/uploads/${req.file.filename}`,
+      },
+    });
+```
+
+#### backend\controllers\img.controller.js
+```jsx
+          if (block.type === 'image') {
+            return (
+              <div key={index}>
+                <img 
+                  src={block.data.file.url} 
+                  alt={block.data.caption || ""} 
+                  style={{ 
+                    maxWidth: '100%', 
+                    maxHeight: '400px',    // <-- Εδώ το πρόσθεσα
+                    objectFit: 'contain'  // <-- Εδώ το πρόσθεσα
+                  }} 
+                />
+                {block.data.caption && <p>{block.data.caption}</p>}
+              </div>
+            );
+          }
+```
+
+- για να μην φαίνετε μεγάλο και στον editorJs έκανα μια μικρή προσθήκη στο css
+#### frontend\src\App.css
+```css
+/* προοστέθηκε για έλεγχο μεγέθους εικόνας */
+.ce-block__content img {
+  max-width: 100%;
+  max-height: 400px;
+  object-fit: contain;
+}
+```
+
+**επόμενο βήμα αποθήκευση στην mongo κειμένου και εικόνας**

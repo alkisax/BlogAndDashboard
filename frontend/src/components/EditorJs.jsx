@@ -18,6 +18,8 @@ const EditorJs = ({ editorJsData, setEditorJsData }) => {
   // χρειάζομαι μια μεταβλητή για να φορτωσω το Instance απο τον κειμενογράφο
   const editorRef = useRef(null);
 
+  const backEndUrl = 'http://localhost:3001'
+
   useEffect(() => {
     if (!editorRef.current) {
       // κάνω instanciete
@@ -63,8 +65,8 @@ const EditorJs = ({ editorJsData, setEditorJsData }) => {
             class: ImageTool,
             config: {
               endpoints: {
-                byFile: 'http://localhost:3000/uploadFile', // your backend endpoint
-                byUrl: 'http://localhost:3000/fetchUrl',     // optional
+                byFile: `${backEndUrl}/api/images`, // your backend endpoint
+                // byUrl: 'http://localhost:3000/fetchUrl',     // optional
               },
             }
           },
@@ -191,11 +193,18 @@ const EditorJs = ({ editorJsData, setEditorJsData }) => {
               );
             }
           }
-          // TODO
           if (block.type === 'image') {
             return (
               <div key={index}>
-                <img src={block.data.file.url} alt={block.data.caption || ""} style={{ maxWidth: '100%' }} />
+                <img 
+                  src={block.data.file.url} 
+                  alt={block.data.caption || ""} 
+                  style={{ 
+                    maxWidth: '100%', 
+                    maxHeight: '400px',    // <-- Εδώ το πρόσθεσα
+                    objectFit: 'contain'  // <-- Εδώ το πρόσθεσα
+                  }} 
+                />
                 {block.data.caption && <p>{block.data.caption}</p>}
               </div>
             );

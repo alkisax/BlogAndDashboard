@@ -30,6 +30,9 @@ app.use('/api/images', imgRoutes)
 // swagger test page
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec))
 
+// ✅ SERVE UPLOADS BEFORE DIST
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+
 // για να σερβίρει τον φακελο dist του front μετα το npm run build
 app.use(express.static('dist'))
 
