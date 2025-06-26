@@ -789,3 +789,6 @@ module.exports = swaggerSpec;
 ```
 
 **επόμενο βήμα αποθήκευση στην mongo κειμένου και εικόνας**
+πρότα θα φτιαχτεί ένα backend με url στο app.js και model dao controler και routes και μετά θα μπεί το post σε ένα useState και θα σταλθεί στο back με ένα useEffect
+
+
