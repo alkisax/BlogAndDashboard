@@ -17,6 +17,7 @@
     "@editorjs/list": "^2.0.8",
     "@editorjs/marker": "^1.4.0",
     "@editorjs/paragraph": "^2.11.7",
+    "axios": "^1.10.0",
     "editorjs-html": "^4.0.5",
     "editorjs-indent-tune": "^1.4.3",
     "editorjs-paragraph-with-alignment": "^3.0.0",

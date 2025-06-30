@@ -1,4 +1,6 @@
 import React, { useEffect, useRef } from 'react';
+import axios from 'axios';
+
 import EditorJS from '@editorjs/editorjs';
 
 // για να μετατρέψω το editorJsData data σε html
@@ -95,7 +97,40 @@ const EditorJs = ({ editorJsData, setEditorJsData }) => {
         setEditorJsData(outputData);
         console.log('Data saved:', outputData);
         console.log('editorJsData', editorJsData);
+
+        // για την αποθήκευση στην Mongo
+        await axios.post(`${backEndUrl}/api/routes`, {
+          content: outputData
+        })
         
+        // για επιπλέων αποθήκευση εικόνων στην mongoDB ως base64. Τo axios παραπάνω τα σώζει ως λινκ. πχ http://localhost:3001/uploads/image-1751308923423.jpg
+        const imageBlocks = outputData.blocks.filter(block => block.type === 'image')
+
+        for (const block of imageBlocks) {
+          const imageUrl = block.data.file.url
+          try {
+            // 👇 ΠΑΡΕ ΤΗΝ ΕΙΚΟΝΑ ως arraybuffer (BINARY)
+            const imageResponse = await axios.get(imageUrl, {
+              responseType: 'arraybuffer'
+            })
+
+            // 👇 Convert binary to Blob/File
+            const mimeType = block.data.file.mime || 'image/jpeg';
+            const buffer = imageResponse.data;
+            const file = new File([buffer], 'editor-image.jpg', { type: mimeType });
+
+            // 👇 Upload using FormData (required for multer backend)
+            const formData = new FormData();
+            formData.append('image', file);
+            formData.append('name', block.data.caption || 'Image');
+            formData.append('desc', block.data.caption || '');
+
+            await axios.post(`${backEndUrl}/api/images`, formData)
+            console.log('✅ Image sent as JSON to MongoDB');
+          } catch (err) {
+            console.error('❌ Failed to upload image:', err);
+          }
+        }
       } catch (error) {
         console.error("saving failed", error)
       };
