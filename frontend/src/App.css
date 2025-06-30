@@ -25,6 +25,14 @@
 .ce-block--aligned-right {
   text-align: right;
 }
+
+/* προοστέθηκε για έλεγχο μεγέθους εικόνας */
+.ce-block__content img {
+  max-width: 100%;
+  max-height: 400px;
+  object-fit: contain;
+}
+
 /* end of editor js css */
 
 @keyframes logo-spin {

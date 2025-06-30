@@ -5,6 +5,7 @@ const swaggerSpec = require('./utils/swagger');
 // θα προστεθούν πολλα τέτοια endpoints οπως προχωρά η εφαρμογη
 // const todoRoutes = require('./routes/todo.routes')
 const imgRoutes = require('./routes/img.routes'); 
+const postRoutes = require('./routes/post.routes')
 
 // αυτό ειναι κάτι που ίσως μου χρειαστεί στο deploy και δεν το καταλαβαίνω καλα. (και παρακάτω μαζί με αυτό)
 const path = require('path'); // requires explanation. added for rendering front page subpages
@@ -26,9 +27,13 @@ app.use('/ping', (req, res) => {
   res.status(200).json({ message: 'pong' });
 })
 app.use('/api/images', imgRoutes)
+app.use('/api/routes', postRoutes)
 
 // swagger test page
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec))
+
+// ✅ SERVE UPLOADS BEFORE DIST
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // για να σερβίρει τον φακελο dist του front μετα το npm run build
 app.use(express.static('dist'))

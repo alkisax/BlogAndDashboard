@@ -739,3 +739,253 @@ const swaggerSpec = swaggerJsdoc(options);
 
 module.exports = swaggerSpec;
 ```
+
+## εμφάνηση του περιεχομένου σε άλλο div και αλλαγές στο upload
+
+#### backend\controllers\img.controller.js
+```js
+//εδω μικρή αλλαγή
+    if (!req?.file?.path) {
+      return res.status(400).json({ error: 'Missing required fields' });
+    }
+// το res πρέπει να γίνει σε άλλη μορφή για να ταιριάζει με τις προυποθέσεις του editroJs
+    res.status(200).json({
+      success: 1,
+      file: {
+        url: `http://localhost:3001/uploads/${req.file.filename}`,
+      },
+    });
+```
+
+#### backend\controllers\img.controller.js
+```jsx
+          if (block.type === 'image') {
+            return (
+              <div key={index}>
+                <img 
+                  src={block.data.file.url} 
+                  alt={block.data.caption || ""} 
+                  style={{ 
+                    maxWidth: '100%', 
+                    maxHeight: '400px',    // <-- Εδώ το πρόσθεσα
+                    objectFit: 'contain'  // <-- Εδώ το πρόσθεσα
+                  }} 
+                />
+                {block.data.caption && <p>{block.data.caption}</p>}
+              </div>
+            );
+          }
+```
+
+- για να μην φαίνετε μεγάλο και στον editorJs έκανα μια μικρή προσθήκη στο css
+#### frontend\src\App.css
+```css
+/* προοστέθηκε για έλεγχο μεγέθους εικόνας */
+.ce-block__content img {
+  max-width: 100%;
+  max-height: 400px;
+  object-fit: contain;
+}
+```
+
+**επόμενο βήμα αποθήκευση στην mongo κειμένου και εικόνας**
+πρότα θα φτιαχτεί ένα backend με url στο app.js και model dao controler και routes και μετά θα μπεί το post σε ένα useState και θα σταλθεί στο back με ένα useEffect
+
+# αποθήκευση στην Mongo και προβολή ποστ 
+## backend για αποθήκευση blog post
+
+#### backend\app.js
+```js
+const postRoutes = require('./routes/post.routes')
+
+app.use('/api/routes', postRoutes)
+
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+```
+
+#### backend\models\post.model.js
+```js
+const mongoose = require('mongoose');
+
+const postSchema = new mongoose.Schema({
+  content: {
+    time: Number,
+    blocks: [mongoose.Schema.Types.Mixed],
+    version: String
+  }
+}, { timestamps: true });
+
+module.exports = mongoose.model('Post', postSchema);
+```
+
+#### backend\daos\post.dao.js
+```js
+const Post = require('../models/post.model');
+
+const getAllPosts = () => {
+  return Post.find({});
+};
+
+const createPost = (content) => {
+  return Post.create({ content });
+};
+
+module.exports = {
+  getAllPosts,
+  createPost,
+};
+```
+
+#### backend\controllers\post.controller.js
+```js
+// controllers/post.controller.js
+const postDao = require('../daos/post.dao');
+
+const createPost = async (req, res) => {
+  try {
+    const { content } = req.body;
+
+    if (!content || !content.blocks) {
+      return res.status(400).json({ error: 'Invalid EditorJS content' });
+    }
+
+    const savedPost = await postDao.createPost(content);
+
+    res.status(201).json(savedPost);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Server error while saving post' });
+  }
+};
+
+module.exports = {
+  createPost,
+};
+```
+#### backend\routes\post.routes.js
+```js
+const express = require('express');
+const router = express.Router();
+const postControler = require('../controllers/post.controller')
+
+/**
+ * @swagger
+ * /api/routes:
+ *   post:
+ *     summary: Create a new Editor.js post
+ *     tags: [Posts]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               content:
+ *                 type: object
+ *                 description: Editor.js output (time, blocks, version)
+ *             example:
+ *               content:
+ *                 time: 1683123123000
+ *                 blocks:
+ *                   - type: paragraph
+ *                     data:
+ *                       text: Hello from Swagger!
+ *                 version: "2.27.0"
+ *     responses:
+ *       201:
+ *         description: Post created
+ *       400:
+ *         description: Invalid EditorJS content
+ *       500:
+ *         description: Server error
+ */
+router.post('/', postControler.createPost)
+
+module.exports = router;
+```
+
+## frontend για αποθήκευση blog post
+- μια αλλαγή μόνο στην handlesubmit με axios.post
+#### frontend\src\components\EditorJs.jsx
+```jsx
+  const handleSubmit = async () => {
+    if(editorRef.current) {
+      try {
+        //  η save() ερχεται απο τον editorjs και επιστρέφει μια υπόσχεση με τα δεδομένα του editor
+        const outputData = await editorRef.current.save()
+        localStorage.setItem('editorData', JSON.stringify(outputData));
+        setEditorJsData(outputData);
+        console.log('Data saved:', outputData);
+        console.log('editorJsData', editorJsData);
+
+        // για την αποθήκευση στην Mongo
+        await axios.post(`${backEndUrl}/api/routes`, {
+          content: outputData
+        })      
+      } catch (error) {
+        console.error("saving failed", error)
+      };
+    }
+  }
+```
+- βλεπω στο compass οτι μου αποθηκεύεται ως http://localhost:3001/uploads/image-1751308923423.jpg. θα προτιμούσα αν μου έσωζε ολόκληρη την φωτογραφία στη mongo
+
+αλλαξε ξανά η handleSubmit για να μετατρέπει τα αρχεια σε blob και να τα αποθηκεύει στην Mongo  
+#### frontend\src\components\EditorJs.jsx
+```jsx
+  const handleSubmit = async () => {
+    if(editorRef.current) {
+      try {
+        //  η save() ερχεται απο τον editorjs και επιστρέφει μια υπόσχεση με τα δεδομένα του editor
+        const outputData = await editorRef.current.save()
+        localStorage.setItem('editorData', JSON.stringify(outputData));
+        setEditorJsData(outputData);
+        console.log('Data saved:', outputData);
+        console.log('editorJsData', editorJsData);
+
+        // για την αποθήκευση στην Mongo
+        await axios.post(`${backEndUrl}/api/routes`, {
+          content: outputData
+        })
+        
+        // για επιπλέων αποθήκευση εικόνων στην mongoDB ως base64. Τo axios παραπάνω τα σώζει ως λινκ. πχ http://localhost:3001/uploads/image-1751308923423.jpg
+        const imageBlocks = outputData.blocks.filter(block => block.type === 'image')
+
+        for (const block of imageBlocks) {
+          const imageUrl = block.data.file.url
+          try {
+            // 👇 ΠΑΡΕ ΤΗΝ ΕΙΚΟΝΑ ως arraybuffer (BINARY)
+            const imageResponse = await axios.get(imageUrl, {
+              responseType: 'arraybuffer'
+            })
+
+            // 👇 Convert binary to Blob/File
+            const mimeType = block.data.file.mime || 'image/jpeg';
+            const buffer = imageResponse.data;
+            const file = new File([buffer], 'editor-image.jpg', { type: mimeType });
+
+            // 👇 Upload using FormData (required for multer backend)
+            const formData = new FormData();
+            formData.append('image', file);
+            formData.append('name', block.data.caption || 'Image');
+            formData.append('desc', block.data.caption || '');
+
+            await axios.post(`${backEndUrl}/api/images`, formData)
+            console.log('✅ Image sent as JSON to MongoDB');
+          } catch (err) {
+            console.error('❌ Failed to upload image:', err);
+          }
+        }
+      } catch (error) {
+        console.error("saving failed", error)
+      };
+    }
+  }
+```
+
+πριν προχωρήσω να εξηγηθει με σχολια ο τρόπος αποθήκευσης
+επόμενο βήμα να φτιαχτεί ένα νεο κομπονεντ που να κάνει map και να προβαλει τα ποστ
+ο κόδικας όλης της λίστας προβολής με τα πολλά if else θα πρέπει να μεταφερθεί αλλού
+
+

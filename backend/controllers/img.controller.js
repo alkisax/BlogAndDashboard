@@ -19,7 +19,7 @@ const uploadImage = async (req, res) => {
   console.log('enter uploadImage controller' );
   //ελενγχουμε το req απο τον client αν έχει οτι χρειάζεται
   try {
-    if (!req.file || !req.body.name) {
+    if (!req?.file?.path) {
       return res.status(400).json({ error: 'Missing required fields' });
     }
 
@@ -45,7 +45,15 @@ const uploadImage = async (req, res) => {
     
     // εδω με το imgDao το στελνουμε στην mongo ή αποθήκευση ως αρχείο έχει γίνει ήδη απο τον multer middleware
     await imgDao.createImage(obj);
-    res.status(200).json({ message: 'image uploaded' });
+
+    // το res πρέπει να γίνει σε άλλη μορφή για να ταιριάζει με τις προυποθέσεις του editroJs
+    res.status(200).json({
+      success: 1,
+      file: {
+        url: `http://localhost:3001/uploads/${req.file.filename}`,
+      },
+    });
+    // res.status(200).json({ message: 'image uploaded' });
   } catch (err) {
     console.error('Upload error:', err);
     res.status(500).send('Upload failed');
