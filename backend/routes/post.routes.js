@@ -4,7 +4,7 @@ const postControler = require('../controllers/post.controller')
 
 /**
  * @swagger
- * /api/routes:
+ * /api/posts:
  *   post:
  *     summary: Create a new Editor.js post
  *     tags: [Posts]
@@ -35,5 +35,25 @@ const postControler = require('../controllers/post.controller')
  *         description: Server error
  */
 router.post('/', postControler.createPost)
+
+/**
+ * @swagger
+ * /api/posts:
+ *   get:
+ *     summary: Get all posts
+ *     tags: [Posts]
+ *     responses:
+ *       200:
+ *         description: Array of posts
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 $ref: '#/components/schemas/Post'
+ *       500:
+ *         description: Server error
+ */
+router.get('/', postControler.getAllPosts)
 
 module.exports = router;

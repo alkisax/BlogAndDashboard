@@ -18,6 +18,16 @@ const createPost = async (req, res) => {
   }
 };
 
+const getAllPosts = async (req, res) => {
+  try {
+    const posts = await postDao.getAllPosts()
+    res.status(201).json(posts);
+  } catch (err) {
+    res.status(500).json({ error: 'Server error while fetching posts' })
+  }
+}
+
 module.exports = {
   createPost,
+  getAllPosts,
 };

@@ -983,6 +983,7 @@ module.exports = router;
     }
   }
 ```
+## μεταφορά μεγάλου κώδικα στο EditorJs σε χωριστα component και hooks
 - ο κώδικας όλης της λίστας προβολής με τα πολλά if else θα πρέπει να μεταφερθεί αλλού
 - oλος ο κώδικας της αρχικής παραμετροποίησης του editor js μεταφέρθηκε σε custom hook
 - προστέθηκε κουμπί handleSubmit όπου κάνει προβολή χωρίς ομως να αποθηκευει στην βάση
@@ -1293,7 +1294,127 @@ const EditorJs = ({ editorJsData, setEditorJsData, backEndUrl }) => {
 export default EditorJs
 ```
 
-- επόμενο βήμα να φτιαχτεί ένα νεο κομπονεντ που να κάνει map και να προβαλει τα ποστ
+# νεο κομπονεντ που να κάνει map και να προβαλει τα ποστ
+### αλλαγή στο back
+#### backend\controllers\post.controller.js
+```js
+const getAllPosts = async (req, res) => {
+  try {
+    const posts = await postDao.getAllPosts()
+    res.status(201).json(posts);
+  } catch (err) {
+    res.status(500).json({ error: 'Server error while fetching posts' })
+  }
+}
+```
+
+#### backend\routes\post.routes.js
+```js
+router.get('/', postControler.getAllPosts)
+```
+
+### προσθήκες στο front
+#### frontend\src\App.jsx
+```jsx
+import Posts from './pages/Posts'
+function App() {
+  const [editorJsData, setEditorJsData] = useState({})
+  return (
+    <>
+      <BrowserRouter>
+          <Routes>
+            <Route
+              path="/posts"
+              element={<Posts 
+                backEndUrl={backEndUrl}
+              />}
+            />
+          </Routes>
+      </BrowserRouter>
+    </>
+  )
+}
+```
+
+#### frontend\src\pages\HomePage.jsx
+```jsx
+  const navigate = useNavigate()
+  const navigateToPosts = () => {
+    navigate("/posts")
+  }
+  return (
+    <>
+      <div>
+        <h3>View all posts</h3>
+        <div className='btnDiv flex gap-3 mx-3 justify-center'>
+          <button onClick={navigateToPosts}>
+            Posts
+          </button>
+        </div>
+      </div>
+    </>
+  );
+```
+#### frontend\src\pages\Posts.jsx
+```jsx
+import { useState, useEffect } from "react"
+import axios from 'axios';
+
+const Posts = ({ backEndUrl }) => {
+  const [loading, setLoading] = useState(true)
+  const [posts, setPosts] = useState([])
+
+  useEffect(() => {
+    const fetchPosts = async () => {
+      try {
+        const response = await axios.get(`${backEndUrl}/api/posts`);
+        setPosts(response.data); 
+        setLoading(false);
+      } catch (error) {
+        console.error("Error fetching posts:", error);
+        setLoading(false); 
+      }
+    };
+    
+    fetchPosts();
+  }, [backEndUrl]);
+
+  return (
+    <>
+      {loading && <p>Loading...</p>}
+      {!loading && posts.length === 0 && <p>No posts found</p>}
+      <ul>
+        {!loading && posts.length !== 0 &&
+          posts.map((post) => (
+            <li key={post._id}>
+                {/* JSON.stringify(post.content, null, 2) → turns the post.content object into a string. Wrapping it in <pre>...</pre> → preserves the whitespace and line breaks in HTML*/}
+              <pre>{JSON.stringify(post.content, null, 2)}</pre>
+              <p>{new Date(post.createdAt).toLocaleString()}</p>
+            </li>
+          ))
+        }
+      </ul>
+    </>
+  )
+}
+export default Posts
+```
+
+- το προβλημα εδώ είναι οτι η προβολή δεν είναι οπως θα έπρεπε 
+```jsx
+        {!loading && posts.length !== 0 &&
+          posts.map((post) => (
+            <li key={post._id}>
+                {/* JSON.stringify(post.content, null, 2) → turns the post.content object into a string. Wrapping it in <pre>...</pre> → preserves the whitespace and line breaks in HTML*/}
+              {/* <pre>{JSON.stringify(post.content, null, 2)}</pre> */}
+              <RenderedEditorJsContent editorJsData={post.content} />
+              <p>{new Date(post.createdAt).toLocaleString()}</p>
+            </li>
+          ))
+        }
+```
+
+- problem in rendering `<b> <br>`
 
 
 

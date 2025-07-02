@@ -1,12 +1,22 @@
+import {useNavigate} from "react-router";
 import EditorJs from "../components/EditorJs";
 
 function HomePage({ editorJsData, setEditorJsData, backEndUrl }) {
+  
+  const navigate = useNavigate()
+  const navigateToPosts = () => {
+    navigate("/posts")
+  }
 
   return (
     <>
       <div>
         <h3>View all posts</h3>
-
+        <div className='btnDiv flex gap-3 mx-3 justify-center'>
+          <button onClick={navigateToPosts}>
+            Posts
+          </button>
+        </div>
       </div>
 
       <EditorJs 
