@@ -27,7 +27,7 @@ app.use('/ping', (req, res) => {
   res.status(200).json({ message: 'pong' });
 })
 app.use('/api/images', imgRoutes)
-app.use('/api/routes', postRoutes)
+app.use('/api/posts', postRoutes)
 
 // swagger test page
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec))

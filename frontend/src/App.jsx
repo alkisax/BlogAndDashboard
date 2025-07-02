@@ -6,6 +6,8 @@ import HomePage from './pages/HomePage';
 function App() {
    const [editorJsData, setEditorJsData] = useState({})
 
+    const backEndUrl = 'http://localhost:3001'
+
   return (
     <>
       <BrowserRouter>
@@ -15,6 +17,7 @@ function App() {
               element={<HomePage 
                 editorJsData={editorJsData} 
                 setEditorJsData={setEditorJsData}
+                backEndUrl={backEndUrl}
               />}
             />
           </Routes>

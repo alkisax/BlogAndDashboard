@@ -1,93 +1,22 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useRef } from 'react';
 import axios from 'axios';
 import RenderedEditorJsContent from './RenderedEditorJsContent'
+import { useInitEditor } from '../hooks/useInitEditor';
 
 import EditorJS from '@editorjs/editorjs';
 
-// για να μετατρέψω το editorJsData data σε html
-// import edjsParser from 'editorjs-parser';
-
-// import Paragraph from '@editorjs/paragraph';
-import Header from '@editorjs/header';
-import List from '@editorjs/list';
-import Marker from '@editorjs/marker';
-import InlineCode from '@editorjs/inline-code';
-import ImageTool from '@editorjs/image';
-
-import AlignmentTuneTool from 'editorjs-text-alignment-blocktune'; // δεν είχε justify alignment αλλά είχε διαφορ καλά για headers και list Οπότε το κρατάω και χρησιμοποιω το Pargraph-with-alignment για το justify
-import Paragraph from 'editorjs-paragraph-with-alignment';
-
-const EditorJs = ({ editorJsData, setEditorJsData }) => {
+const EditorJs = ({ editorJsData, setEditorJsData, backEndUrl }) => {
   // χρειάζομαι μια μεταβλητή για να φορτωσω το Instance απο τον κειμενογράφο
   const editorRef = useRef(null);
 
-  const backEndUrl = 'http://localhost:3001'
+  // ✅ σε χωριστό custom hook μεταφέρθηκε όλη η παραμετροποίηση του editorJs
+  useInitEditor(editorRef, backEndUrl);
 
-  useEffect(() => {
-    if (!editorRef.current) {
-      // κάνω instanciete
-      editorRef.current = new EditorJS({
-        //IMPORTANT λέω τι id έχει το dom element μου στο οποίο θα εκχωρήσω τις ιδιοτητες του κειμενογράφου
-        holder: 'editorjs',
-        // μεσα sto tools βαζω ένα ένα τα εργαλέια 
-        tools: {
-          paragraph: {
-            class: Paragraph,
-            inlineToolbar: true, // This enables inline tools like bold/italic
-            config: {
-              placeholder: 'Start writing your text here...',
-            },
-            // tunes: ['indentTune'],
-          },
-          header: {
-            class: Header,
-            inlineToolbar: true,
-            config: {
-              placeholder: 'Enter a title',
-            },
-            tunes: ['alignment'],
-          },
-          list: {
-            class: List,
-            inlineToolbar: true,
-            tunes: ['alignment'],
-          },
-          marker: Marker,        // Highlight
-          inlineCode: InlineCode, // Inline code block
-          alignment: {
-            class: AlignmentTuneTool,
-            config: {
-              default: 'right',
-              blocks: {
-                header: 'left',
-                list: 'left',
-              },
-            },
-          },
-          image: {
-            class: ImageTool,
-            config: {
-              endpoints: {
-                byFile: `${backEndUrl}/api/images`, // your backend endpoint
-                // byUrl: 'http://localhost:3000/fetchUrl',     // optional
-              },
-            }
-          },
-        },
-        onReady: () => {
-          console.log('Editor.js is ready');
-        },
-      });
-    }
-
-    // Cleanup when component unmounts
-    return () => {
-      if (editorRef.current && editorRef.current.destroy) {
-        editorRef.current.destroy();
-        editorRef.current = null;
-      }
-    };
-  }, []);
+  const handlePreview = async () => {
+    const outputData = await editorRef.current.save()
+    localStorage.setItem('editorData', JSON.stringify(outputData));
+    setEditorJsData(outputData);
+  }
 
   const handleSubmit = async () => {
     if(editorRef.current) {
@@ -97,10 +26,9 @@ const EditorJs = ({ editorJsData, setEditorJsData }) => {
         localStorage.setItem('editorData', JSON.stringify(outputData));
         setEditorJsData(outputData);
         console.log('Data saved:', outputData);
-        console.log('editorJsData', editorJsData);
 
         // για την αποθήκευση στην Mongo
-        await axios.post(`${backEndUrl}/api/routes`, {
+        await axios.post(`${backEndUrl}/api/posts`, {
           content: outputData
         })
         
