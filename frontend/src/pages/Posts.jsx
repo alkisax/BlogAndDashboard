@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react"
+import { Link } from "react-router-dom"
 import axios from 'axios';
 import RenderedEditorJsContent from "../components/RenderedEditorJsContent";
 
@@ -70,15 +71,18 @@ const Posts = ({ backEndUrl }) => {
         <div className="grid gap-6">
             {!loading && posts.length !== 0 &&
               posts.map((post) => (
-                <div 
-                  key={post._id}
-                  className="bg-slate-100 text-black shadow-md rounded-2xl p-6 border border-gray-300 hover:shadow-lg transition-shadow"
-                >
-                  <RenderedEditorJsContent editorJsData={getPreviewContent(post.content)} />
-                  <p className="text-sm text-gray-500 mt-4">
-                    {new Date(post.createdAt).toLocaleString()}
-                  </p>
-                </div>
+                <Link to={`/posts/${post._id}`}>
+                  <div 
+                    key={post._id}
+                    className="bg-slate-100 text-black shadow-md rounded-2xl p-6 border border-gray-300 hover:shadow-lg transition-shadow"
+                  >
+                      <RenderedEditorJsContent editorJsData={getPreviewContent(post.content)} />
+
+                    <p className="text-sm text-gray-500 mt-4">
+                      {new Date(post.createdAt).toLocaleString()}
+                    </p>
+                  </div>
+                </Link>
               ))
             }        
         </div>    

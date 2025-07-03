@@ -56,4 +56,25 @@ router.post('/', postControler.createPost)
  */
 router.get('/', postControler.getAllPosts)
 
+/**
+ * @swagger
+ * /api/posts/{postId}:
+ *   get:
+ *     summary: Get a post by ID
+ *     tags: [Posts]
+ *     parameters:
+ *       - in: path
+ *         name: postId
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Post data
+ *       404:
+ *         description: Post not found
+ *       500:
+ *         description: Server error
+ */
+router.get('/:postId', postControler.getPostById);
+
 module.exports = router;
