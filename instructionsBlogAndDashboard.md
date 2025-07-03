@@ -2013,6 +2013,7 @@ const EditorJs = ({ editorJsData, setEditorJsData, backEndUrl, isEditMode=false 
 }
 export default EditorJs
 ```
+- Paginatinon
 - TODO να αντιστιχίσω τα post σε σελίδες
 - upload pdf
 
