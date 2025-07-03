@@ -31,6 +31,10 @@ const BlogPost = ({ backEndUrl }) => {
     navigate('/');
   }
 
+  const editPost = () => {
+    navigate(`/edit/${id}`);
+  }
+
   return (
     <>
       <h1 className="text-2xl font-bold mb-4 text-center">All Posts</h1>
@@ -55,6 +59,12 @@ const BlogPost = ({ backEndUrl }) => {
                       className='bg-blue-500 text-white px-4 py-2 rounded'
                     >
                       Home
+                    </button>
+                    <button 
+                      onClick={editPost}
+                      className='bg-blue-500 text-white px-4 py-2 rounded'
+                    >
+                      Edit
                     </button>
                   </div>
                 </div>

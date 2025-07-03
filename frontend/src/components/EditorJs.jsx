@@ -1,16 +1,42 @@
-import React, { useRef } from 'react';
+import { useRef, useEffect } from 'react';
 import axios from 'axios';
+import { useParams } from 'react-router-dom';
 import RenderedEditorJsContent from './RenderedEditorJsContent'
 import { useInitEditor } from '../hooks/useInitEditor';
 
 import EditorJS from '@editorjs/editorjs';
 
-const EditorJs = ({ editorJsData, setEditorJsData, backEndUrl }) => {
+const EditorJs = ({ editorJsData, setEditorJsData, backEndUrl, isEditMode=false }) => {
   // χρειάζομαι μια μεταβλητή για να φορτωσω το Instance απο τον κειμενογράφο
   const editorRef = useRef(null);
 
   // ✅ σε χωριστό custom hook μεταφέρθηκε όλη η παραμετροποίηση του editorJs
   useInitEditor(editorRef, backEndUrl);
+
+  const { id } = useParams();
+
+  // 🟧 If in edit mode, fetch post and populate editor
+  useEffect(() => {
+    const fetchPost = async () => {
+      if (isEditMode && id && editorRef.current) {
+        console.log("enter edit mode")        
+        try {
+          const response = await axios.get(`${backEndUrl}/api/posts/${id}`);
+          const savedData = response.data.content;
+          const editor = editorRef.current;
+
+          // Clear and render with existing data
+          await editor.isReady;
+          editor.render(savedData);
+        } catch (error) {
+          console.error("Failed to load post for editing:", error);
+        }
+      }
+    };
+
+    fetchPost();
+  }, [id, isEditMode, backEndUrl]);
+
 
   const handlePreview = async () => {
     const outputData = await editorRef.current.save()
@@ -28,9 +54,18 @@ const EditorJs = ({ editorJsData, setEditorJsData, backEndUrl }) => {
         console.log('Data saved:', outputData);
 
         // για την αποθήκευση στην Mongo
-        await axios.post(`${backEndUrl}/api/posts`, {
-          content: outputData
-        })
+        if (isEditMode && id) {
+          await axios.put(`${backEndUrl}/api/posts/${id}`, {
+            content: outputData
+          })
+          console.log("✅ Post updated");
+        } else {
+          await axios.post(`${backEndUrl}/api/posts`, {
+            content: outputData
+          })
+          console.log("✅ Post created");
+        }
+
         
         // για επιπλέων αποθήκευση εικόνων στην mongoDB ως base64. Τo axios παραπάνω τα σώζει ως λινκ. πχ http://localhost:3001/uploads/image-1751308923423.jpg
         const imageBlocks = outputData.blocks.filter(block => block.type === 'image')

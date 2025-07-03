@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const postControler = require('../controllers/post.controller')
+const postController = require('../controllers/post.controller')
 
 /**
  * @swagger
@@ -34,7 +34,7 @@ const postControler = require('../controllers/post.controller')
  *       500:
  *         description: Server error
  */
-router.post('/', postControler.createPost)
+router.post('/', postController.createPost)
 
 /**
  * @swagger
@@ -54,7 +54,7 @@ router.post('/', postControler.createPost)
  *       500:
  *         description: Server error
  */
-router.get('/', postControler.getAllPosts)
+router.get('/', postController.getAllPosts)
 
 /**
  * @swagger
@@ -75,6 +75,49 @@ router.get('/', postControler.getAllPosts)
  *       500:
  *         description: Server error
  */
-router.get('/:postId', postControler.getPostById);
+router.get('/:postId', postController.getPostById);
+
+/**
+ * @swagger
+ * /api/posts/{postId}:
+ *   put:
+ *     summary: Edit a post by ID
+ *     tags: [Posts]
+ *     parameters:
+ *       - in: path
+ *         name: postId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: The ID of the post to update
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               content:
+ *                 type: object
+ *                 properties:
+ *                   time:
+ *                     type: integer
+ *                   blocks:
+ *                     type: array
+ *                     items:
+ *                       type: object
+ *                   version:
+ *                     type: string
+ *     responses:
+ *       200:
+ *         description: Post successfully updated
+ *       400:
+ *         description: Invalid EditorJS content
+ *       404:
+ *         description: Post not found
+ *       500:
+ *         description: Server error
+ */
+router.put('/:postId', postController.editPost);
 
 module.exports = router;
