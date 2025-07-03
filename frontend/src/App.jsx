@@ -28,6 +28,8 @@ function App() {
                 backEndUrl={backEndUrl}
               />}
             />
+
+            <Route path="/posts/:id" element={<BlogPost backEndUrl={backEndUrl} />} />
           </Routes>
       </BrowserRouter>
     </>
