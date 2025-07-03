@@ -1581,8 +1581,443 @@ router.get('/:postId', postControler.getPostById);
   <Route path="/posts/:id" element={<BlogPost backEndUrl={backEndUrl} />} />
 ```
 
+#### frontend\src\pages\Posts.jsx
+```jsx
+        <div className="grid gap-6">
+            {!loading && posts.length !== 0 &&
+              posts.map((post) => (
+                <Link to={`/posts/${post._id}`}>
+                  <div 
+                    key={post._id}
+                    className="bg-slate-100 text-black shadow-md rounded-2xl p-6 border border-gray-300 hover:shadow-lg transition-shadow"
+                  >
+                      <RenderedEditorJsContent editorJsData={getPreviewContent(post.content)} />
 
-- problem in rendering `<b> <br>`
+                    <p className="text-sm text-gray-500 mt-4">
+                      {new Date(post.createdAt).toLocaleString()}
+                    </p>
+                  </div>
+                </Link>
+              ))
+            }        
+        </div>   
+```
+
+#### frontend\src\pages\BlogPost.jsx
+```jsx
+import axios from 'axios';
+import { useState, useEffect } from "react"
+import { useParams, useNavigate  } from 'react-router-dom';
+import RenderedEditorJsContent from "../components/RenderedEditorJsContent";
+
+const BlogPost = ({ backEndUrl }) => {
+  const [loading, setLoading] = useState(true)
+  const [post, setPost] = useState(null)
+
+  const { id } = useParams();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    const fetchPost = async () => {
+      try {
+        const response = await axios.get(`${backEndUrl}/api/posts/${id}`);
+        setPost(response.data); 
+        setLoading(false);
+      } catch (error) {
+        console.error("Error fetching posts:", error);
+        setLoading(false); 
+      }
+    };
+    
+    if (id) {
+      fetchPost();
+    }
+  }, [backEndUrl, id]);
+
+  const navigateToHome = () => {
+    navigate('/');
+  }
+
+  return (
+    <>
+      <h1 className="text-2xl font-bold mb-4 text-center">All Posts</h1>
+      <div className="p-4 max-w-4xl mx-auto">
+        {loading && <p>Loading...</p>}
+        {!loading && !post && <p>Blog post was not found</p>}
+
+        <div className="grid gap-6">
+            {!loading && post &&
+
+                <div 
+                  key={post._id}
+                  className="bg-slate-100 text-black shadow-md rounded-2xl p-6 border border-gray-300 hover:shadow-lg transition-shadow"
+                >
+                  <RenderedEditorJsContent editorJsData={post.content} />
+                  <p className="text-sm text-gray-500 mt-4">
+                    {new Date(post.createdAt).toLocaleString()}
+                  </p>
+                  <div className='btnDiv flex gap-3 mx-3 justify-center'>
+                    <button 
+                      onClick={navigateToHome}
+                      className='bg-blue-500 text-white px-4 py-2 rounded'
+                    >
+                      Home
+                    </button>
+                  </div>
+                </div>
+
+            }        
+        </div>    
+      </div>
+    </>
+  )
+}
+
+export default BlogPost
+```
+
+# Εdit post
+## backend for edit
+#### backend\daos\post.dao.js
+```js
+const editPost = async (postId, content) => {
+  const post = await Post.findById(postId);
+  if (!post) {
+    throw new Error('post not found');
+  }
+  post.content = content;
+  return await post.save();
+};
+
+module.exports = {
+  getAllPosts,
+  getPostById,
+  createPost,
+  editPost,
+};
+```
+
+#### backend\controllers\post.controller.js
+```js
+const editPost = async (req, res) => {
+  try {
+    const { postId } = req.params;
+    const { content } = req.body;
+
+    if (!content || !content.blocks) {
+      return res.status(400).json({ error: 'Invalid EditorJS content for edit post' });
+    }
+
+    const savedPost = await postDao.editPost(postId, content);
+
+    res.status(200).json(savedPost);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Server error while editing post' });
+  }
+};
+```
+
+#### backend\routes\img.routes.js
+```js
+/**
+ * @swagger
+ * /api/posts/{postId}:
+ *   put:
+ *     summary: Edit a post by ID
+ *     tags: [Posts]
+ *     parameters:
+ *       - in: path
+ *         name: postId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: The ID of the post to update
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               content:
+ *                 type: object
+ *                 properties:
+ *                   time:
+ *                     type: integer
+ *                   blocks:
+ *                     type: array
+ *                     items:
+ *                       type: object
+ *                   version:
+ *                     type: string
+ *     responses:
+ *       200:
+ *         description: Post successfully updated
+ *       400:
+ *         description: Invalid EditorJS content
+ *       404:
+ *         description: Post not found
+ *       500:
+ *         description: Server error
+ */
+router.put('/:postId', postController.editPost);
+```
+
+## front end for edit
+#### frontend\src\App.jsx
+```jsx
+  <Route 
+    path="/edit/:id" 
+    element={<EditBlogPost
+      editorJsData={editorJsData}
+      setEditorJsData={setEditorJsData}
+      backEndUrl={backEndUrl}
+      isEditMode={true}
+    />}
+  />
+```
+
+#### frontend\src\pages\EditBlogPost.jsx
+```jsx
+import EditorJs from '../components/EditorJs';
+
+const EditBlogPost = ({ editorJsData, setEditorJsData, backEndUrl}) => {
+
+  return (
+    <>
+      <EditorJs 
+        editorJsData={editorJsData} 
+        setEditorJsData={setEditorJsData}
+        backEndUrl={backEndUrl}
+        isEditMode={true}
+      />   
+    </>
+  )
+}
+
+export default EditBlogPost
+```
+
+#### σημαντικές αλλαγές στο frontend\src\components\EditorJs.jsx
+```jsx
+import { useParams } from 'react-router-dom';
+
+const { id } = useParams();
+
+  // 🟧 If in edit mode, fetch post and populate editor
+  useEffect(() => {
+    const fetchPost = async () => {
+      if (isEditMode && id && editorRef.current) {
+        console.log("enter edit mode")        
+        try {
+          const response = await axios.get(`${backEndUrl}/api/posts/${id}`);
+          const savedData = response.data.content;
+          const editor = editorRef.current;
+
+          // Clear and render with existing data
+          await editor.isReady;
+          editor.render(savedData);
+        } catch (error) {
+          console.error("Failed to load post for editing:", error);
+        }
+      }
+    };
+
+    fetchPost();
+  }, [id, isEditMode, backEndUrl]);
+
+    const handleSubmit = async () => {
+    if(editorRef.current) {
+      try {
+        //  η save() ερχεται απο τον editorjs και επιστρέφει μια υπόσχεση με τα δεδομένα του editor
+        const outputData = await editorRef.current.save()
+        localStorage.setItem('editorData', JSON.stringify(outputData));
+        setEditorJsData(outputData);
+        console.log('Data saved:', outputData);
+
+        // για την αποθήκευση στην Mongo
+        if (isEditMode && id) {
+          await axios.put(`${backEndUrl}/api/posts/${id}`, {
+            content: outputData
+          })
+          console.log("✅ Post updated");
+        } else {
+          await axios.post(`${backEndUrl}/api/posts`, {
+            content: outputData
+          })
+          console.log("✅ Post created");
+        }
+
+        
+        // για επιπλέων αποθήκευση εικόνων στην mongoDB ως base64. Τo axios παραπάνω τα σώζει ως λινκ. πχ http://localhost:3001/uploads/image-1751308923423.jpg
+        const imageBlocks = outputData.blocks.filter(block => block.type === 'image')
+
+        for (const block of imageBlocks) {
+          const imageUrl = block.data.file.url
+          try {
+            // 👇 ΠΑΡΕ ΤΗΝ ΕΙΚΟΝΑ ως arraybuffer (BINARY)
+            const imageResponse = await axios.get(imageUrl, {
+              responseType: 'arraybuffer'
+            })
+
+            // 👇 Convert binary to Blob/File
+            const mimeType = block.data.file.mime || 'image/jpeg';
+            const buffer = imageResponse.data;
+            const file = new File([buffer], 'editor-image.jpg', { type: mimeType });
+
+            // 👇 Upload using FormData (required for multer backend)
+            const formData = new FormData();
+            formData.append('image', file);
+            formData.append('name', block.data.caption || 'Image');
+            formData.append('desc', block.data.caption || '');
+
+            await axios.post(`${backEndUrl}/api/images`, formData)
+            console.log('✅ Image sent as JSON to MongoDB');
+          } catch (err) {
+            console.error('❌ Failed to upload image:', err);
+          }
+        }
+      } catch (error) {
+        console.error("saving failed", error)
+      };
+    }
+  }
+```
+```jsx
+import { useRef, useEffect } from 'react';
+import axios from 'axios';
+import { useParams } from 'react-router-dom';
+import RenderedEditorJsContent from './RenderedEditorJsContent'
+import { useInitEditor } from '../hooks/useInitEditor';
+
+import EditorJS from '@editorjs/editorjs';
+
+const EditorJs = ({ editorJsData, setEditorJsData, backEndUrl, isEditMode=false }) => {
+  // χρειάζομαι μια μεταβλητή για να φορτωσω το Instance απο τον κειμενογράφο
+  const editorRef = useRef(null);
+
+  // ✅ σε χωριστό custom hook μεταφέρθηκε όλη η παραμετροποίηση του editorJs
+  useInitEditor(editorRef, backEndUrl);
+
+  const { id } = useParams();
+
+  // 🟧 If in edit mode, fetch post and populate editor
+  useEffect(() => {
+    const fetchPost = async () => {
+      if (isEditMode && id && editorRef.current) {
+        console.log("enter edit mode")        
+        try {
+          const response = await axios.get(`${backEndUrl}/api/posts/${id}`);
+          const savedData = response.data.content;
+          const editor = editorRef.current;
+
+          // Clear and render with existing data
+          await editor.isReady;
+          editor.render(savedData);
+        } catch (error) {
+          console.error("Failed to load post for editing:", error);
+        }
+      }
+    };
+
+    fetchPost();
+  }, [id, isEditMode, backEndUrl]);
+
+
+  const handlePreview = async () => {
+    const outputData = await editorRef.current.save()
+    localStorage.setItem('editorData', JSON.stringify(outputData));
+    setEditorJsData(outputData);
+  }
+
+  const handleSubmit = async () => {
+    if(editorRef.current) {
+      try {
+        //  η save() ερχεται απο τον editorjs και επιστρέφει μια υπόσχεση με τα δεδομένα του editor
+        const outputData = await editorRef.current.save()
+        localStorage.setItem('editorData', JSON.stringify(outputData));
+        setEditorJsData(outputData);
+        console.log('Data saved:', outputData);
+
+        // για την αποθήκευση στην Mongo
+        if (isEditMode && id) {
+          await axios.put(`${backEndUrl}/api/posts/${id}`, {
+            content: outputData
+          })
+          console.log("✅ Post updated");
+        } else {
+          await axios.post(`${backEndUrl}/api/posts`, {
+            content: outputData
+          })
+          console.log("✅ Post created");
+        }
+
+        
+        // για επιπλέων αποθήκευση εικόνων στην mongoDB ως base64. Τo axios παραπάνω τα σώζει ως λινκ. πχ http://localhost:3001/uploads/image-1751308923423.jpg
+        const imageBlocks = outputData.blocks.filter(block => block.type === 'image')
+
+        for (const block of imageBlocks) {
+          const imageUrl = block.data.file.url
+          try {
+            // 👇 ΠΑΡΕ ΤΗΝ ΕΙΚΟΝΑ ως arraybuffer (BINARY)
+            const imageResponse = await axios.get(imageUrl, {
+              responseType: 'arraybuffer'
+            })
+
+            // 👇 Convert binary to Blob/File
+            const mimeType = block.data.file.mime || 'image/jpeg';
+            const buffer = imageResponse.data;
+            const file = new File([buffer], 'editor-image.jpg', { type: mimeType });
+
+            // 👇 Upload using FormData (required for multer backend)
+            const formData = new FormData();
+            formData.append('image', file);
+            formData.append('name', block.data.caption || 'Image');
+            formData.append('desc', block.data.caption || '');
+
+            await axios.post(`${backEndUrl}/api/images`, formData)
+            console.log('✅ Image sent as JSON to MongoDB');
+          } catch (err) {
+            console.error('❌ Failed to upload image:', err);
+          }
+        }
+      } catch (error) {
+        console.error("saving failed", error)
+      };
+    }
+  }
+
+  return (
+    <>
+      <div>
+        <div 
+          id="editorjs" 
+          style={{ border: '2px solid blue', padding: '4px', minHeight: '300px' }} 
+        />
+        <div className='btnDiv flex gap-3 mx-3 justify-center'>
+          <button onClick={handlePreview}>
+            preview
+          </button>
+          <button onClick={handleSubmit}>
+            submit
+          </button>
+        </div>
+      </div>
+
+      <div>
+        <RenderedEditorJsContent editorJsData={editorJsData} />
+      </div>
+    </>
+  )
+}
+export default EditorJs
+```
+- TODO να αντιστιχίσω τα post σε σελίδες
+- upload pdf
+
+- problem. μπορεί να σωζει πολλαπλες φορές μια εικόνα
+- problem in rendering `<b> <br> gr`
 
 
 

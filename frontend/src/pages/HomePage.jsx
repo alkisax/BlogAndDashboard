@@ -1,4 +1,4 @@
-import {useNavigate} from "react-router";
+import {useNavigate} from "react-router-dom";
 import EditorJs from "../components/EditorJs";
 
 function HomePage({ editorJsData, setEditorJsData, backEndUrl }) {

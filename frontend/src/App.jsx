@@ -4,6 +4,7 @@ import {BrowserRouter, Routes, Route} from "react-router-dom";
 import HomePage from './pages/HomePage';
 import Posts from './pages/Posts'
 import BlogPost from './pages/BlogPost';
+import EditBlogPost from './pages/EditBlogPost';
 
 function App() {
   const [editorJsData, setEditorJsData] = useState({})
@@ -30,7 +31,23 @@ function App() {
               />}
             />
 
-            <Route path="/posts/:id" element={<BlogPost backEndUrl={backEndUrl} />} />
+            <Route 
+              path="/posts/:id" 
+              element={<BlogPost 
+                backEndUrl={backEndUrl} 
+              />}
+            />
+
+            <Route 
+              path="/edit/:id" 
+              element={<EditBlogPost
+                editorJsData={editorJsData}
+                setEditorJsData={setEditorJsData}
+                backEndUrl={backEndUrl}
+                isEditMode={true}
+              />}
+            />
+
           </Routes>
       </BrowserRouter>
     </>
