@@ -983,9 +983,606 @@ module.exports = router;
     }
   }
 ```
+## μεταφορά μεγάλου κώδικα στο EditorJs σε χωριστα component και hooks
+- ο κώδικας όλης της λίστας προβολής με τα πολλά if else θα πρέπει να μεταφερθεί αλλού
+- oλος ο κώδικας της αρχικής παραμετροποίησης του editor js μεταφέρθηκε σε custom hook
+- προστέθηκε κουμπί handleSubmit όπου κάνει προβολή χωρίς ομως να αποθηκευει στην βάση
 
-πριν προχωρήσω να εξηγηθει με σχολια ο τρόπος αποθήκευσης
-επόμενο βήμα να φτιαχτεί ένα νεο κομπονεντ που να κάνει map και να προβαλει τα ποστ
-ο κόδικας όλης της λίστας προβολής με τα πολλά if else θα πρέπει να μεταφερθεί αλλού
+#### frontend\src\components\RenderedEditorJsContent.jsx
+```jsx
+import React from "react";
+
+const RenderedEditorJsContent = ({ editorJsData }) => {
+
+  return (
+    <>
+      <div>
+        <h2>EditorJs Data</h2>
+        {/* 
+         to render ηταν δύσκολο και συμβουλευτικα αρκετα το gpt
+        αρχικα ελέγχουμε αν υπάρχει state editorJsData και αν αυτό το state έχει μέσα του blocks
+        και μετά με μια map παίρνουμε το κάθε block και το render-αρουμε ανάλογα με τον τύπο του block χρησιμοποιόντας διάφορες συνθήκες if 
+        */}
+        {editorJsData?.blocks?.map((block, index) => {
+          if (block.type === 'paragraph') {
+            // με μια console.log είδα  το alignmeent και το παιρνω απο το block.tunes.alignment
+            const alignStyle = {
+              textAlign: block.data.alignment || 'left',
+            };
+            return (
+              <p 
+                key={index}
+                style={alignStyle}
+              >
+                  {block.data.text}
+              </p>
+            )
+          }
+          if (block.type === 'header') {
+            // επειδή τα h1 h2 κλπ δεν είναι απλά attributes αλλά θα έχουν την μορφή <h1> κλπ φτιάχνω ένα tag για να γίνει <Tag>
+            // εδω το alignment είναι tune γιατι το παίρνει απο AlignmentTuneTool
+            const Tag = `h${block.data.level || 2}`;
+            const alignment = block.tunes?.alignment?.alignment || 'left';
+            return (
+              <Tag 
+                key={index}
+                style={{ textAlign: alignment }}
+              >
+                {block.data.text}
+              </Tag>
+            )
+          }
+          // το List ήταν αρκετά πολυπλοκο γιατί χρειαζόταν να ελεξω αν είναι ordered η unorder και αν είναι checkbox, όπου αν είναι αν είναι checked και μετά να κάνω το ανάλογο map για την παραγωγή της λίστας
+          if (block.type === 'list') {
+            const alignment = block.tunes?.alignment?.alignment || 'left';
+            const alignStyle = { textAlign: alignment };
+
+            if (block.data.style === 'checklist') {
+              // console.log(block.data.items);
+              // το i είναι ένα index (1,2,3...)
+              const items = block.data.items.map((item, i) => {
+                //Το !! στh JS κάνει μετατροπή οποιασδήποτε τιμής σε boolean.
+                const isChecked = !!item.meta?.checked; 
+
+                return (
+                  <li 
+                    key={i} 
+                    style={{ listStyleType: 'none', display: 'flex', alignItems: 'center' }}
+                  >
+                    <input 
+                      type="checkbox" 
+                      disabled 
+                      checked={isChecked} 
+                      style={{ marginRight: 8 }} 
+                    />
+                    <span>{item.content}</span>
+                  </li>
+                );
+              });
+              // έχει δύο return μια μέσα στο map όπου σε κάθε βήμα μου φτιάχνει το κάθε μεμονομένο li  και μετ ατο προσθέτει στην items και ένα τελικό return έξω αππο την map όπου παράγει την ul
+              return <ul key={index} style={alignStyle}>{items}</ul>;
+            } else {
+              // normal ordered/unordered list
+              const items = block.data.items.map((item, i) => {
+                const text = typeof item === 'string' ? item : item?.content || '[invalid item]';
+                return <li key={i}>{text}</li>;
+              });
+
+              return block.data.style === 'ordered' ? (
+                <ol key={index} style={alignStyle}>{items}</ol>
+              ) : (
+                <ul key={index} style={alignStyle}>{items}</ul>
+              );
+            }
+          }
+          if (block.type === 'image') {
+            return (
+              <div key={index}>
+                <img 
+                  src={block.data.file.url} 
+                  alt={block.data.caption || ""} 
+                  style={{ 
+                    maxWidth: '100%', 
+                    maxHeight: '400px',    // <-- Εδώ το πρόσθεσα
+                    objectFit: 'contain'  // <-- Εδώ το πρόσθεσα
+                  }} 
+                />
+                {block.data.caption && <p>{block.data.caption}</p>}
+              </div>
+            );
+          }
+          if (block.type === 'inlineCode') {
+            return <code key={index}>{block.data.code}</code>;
+          }
+          return null;
+        })}
+      </div>
+    </>
+  )
+}
+export default RenderedEditorJsContent
+```
+#### frontend\src\hooks\useInitEditor.js
+```js
+import React, { useRef } from 'react';
+import axios from 'axios';
+import RenderedEditorJsContent from './RenderedEditorJsContent'
+import { useInitEditor } from '../hooks/useInitEditor';
+
+import EditorJS from '@editorjs/editorjs';
+
+const EditorJs = ({ editorJsData, setEditorJsData, backEndUrl }) => {
+  // χρειάζομαι μια μεταβλητή για να φορτωσω το Instance απο τον κειμενογράφο
+  const editorRef = useRef(null);
+
+  // ✅ σε χωριστό custom hook μεταφέρθηκε όλη η παραμετροποίηση του editorJs
+  useInitEditor(editorRef, backEndUrl);
+
+  const handlePreview = async () => {
+    const outputData = await editorRef.current.save()
+    localStorage.setItem('editorData', JSON.stringify(outputData));
+    setEditorJsData(outputData);
+  }
+
+  const handleSubmit = async () => {
+    if(editorRef.current) {
+      try {
+        //  η save() ερχεται απο τον editorjs και επιστρέφει μια υπόσχεση με τα δεδομένα του editor
+        const outputData = await editorRef.current.save()
+        localStorage.setItem('editorData', JSON.stringify(outputData));
+        setEditorJsData(outputData);
+        console.log('Data saved:', outputData);
+
+        // για την αποθήκευση στην Mongo
+        await axios.post(`${backEndUrl}/api/routes`, {
+          content: outputData
+        })
+        
+        // για επιπλέων αποθήκευση εικόνων στην mongoDB ως base64. Τo axios παραπάνω τα σώζει ως λινκ. πχ http://localhost:3001/uploads/image-1751308923423.jpg
+        const imageBlocks = outputData.blocks.filter(block => block.type === 'image')
+
+        for (const block of imageBlocks) {
+          const imageUrl = block.data.file.url
+          try {
+            // 👇 ΠΑΡΕ ΤΗΝ ΕΙΚΟΝΑ ως arraybuffer (BINARY)
+            const imageResponse = await axios.get(imageUrl, {
+              responseType: 'arraybuffer'
+            })
+
+            // 👇 Convert binary to Blob/File
+            const mimeType = block.data.file.mime || 'image/jpeg';
+            const buffer = imageResponse.data;
+            const file = new File([buffer], 'editor-image.jpg', { type: mimeType });
+
+            // 👇 Upload using FormData (required for multer backend)
+            const formData = new FormData();
+            formData.append('image', file);
+            formData.append('name', block.data.caption || 'Image');
+            formData.append('desc', block.data.caption || '');
+
+            await axios.post(`${backEndUrl}/api/images`, formData)
+            console.log('✅ Image sent as JSON to MongoDB');
+          } catch (err) {
+            console.error('❌ Failed to upload image:', err);
+          }
+        }
+      } catch (error) {
+        console.error("saving failed", error)
+      };
+    }
+  }
+
+  return (
+    <>
+      <div>
+        <div 
+          id="editorjs" 
+          style={{ border: '2px solid blue', padding: '4px', minHeight: '300px' }} 
+        />
+        <div className='btnDiv flex gap-3 mx-3 justify-center'>
+          <button onClick={handlePreview}>
+            preview
+          </button>
+          <button onClick={handleSubmit}>
+            submit
+          </button>
+        </div>
+      </div>
+
+      <div>
+        <RenderedEditorJsContent editorJsData={editorJsData} />
+      </div>
+    </>
+  )
+}
+export default EditorJs
+```
+
+#### frontend\src\components\EditorJs.jsx
+```jsx
+import React, { useRef } from 'react';
+import axios from 'axios';
+import RenderedEditorJsContent from './RenderedEditorJsContent'
+import { useInitEditor } from '../hooks/useInitEditor';
+
+import EditorJS from '@editorjs/editorjs';
+
+const EditorJs = ({ editorJsData, setEditorJsData, backEndUrl }) => {
+  // χρειάζομαι μια μεταβλητή για να φορτωσω το Instance απο τον κειμενογράφο
+  const editorRef = useRef(null);
+
+  // ✅ σε χωριστό custom hook μεταφέρθηκε όλη η παραμετροποίηση του editorJs
+  useInitEditor(editorRef, backEndUrl);
+
+  const handlePreview = async () => {
+    const outputData = await editorRef.current.save()
+    localStorage.setItem('editorData', JSON.stringify(outputData));
+    setEditorJsData(outputData);
+  }
+
+  const handleSubmit = async () => {
+    if(editorRef.current) {
+      try {
+        //  η save() ερχεται απο τον editorjs και επιστρέφει μια υπόσχεση με τα δεδομένα του editor
+        const outputData = await editorRef.current.save()
+        localStorage.setItem('editorData', JSON.stringify(outputData));
+        setEditorJsData(outputData);
+        console.log('Data saved:', outputData);
+
+        // για την αποθήκευση στην Mongo
+        await axios.post(`${backEndUrl}/api/routes`, {
+          content: outputData
+        })
+        
+        // για επιπλέων αποθήκευση εικόνων στην mongoDB ως base64. Τo axios παραπάνω τα σώζει ως λινκ. πχ http://localhost:3001/uploads/image-1751308923423.jpg
+        const imageBlocks = outputData.blocks.filter(block => block.type === 'image')
+
+        for (const block of imageBlocks) {
+          const imageUrl = block.data.file.url
+          try {
+            // 👇 ΠΑΡΕ ΤΗΝ ΕΙΚΟΝΑ ως arraybuffer (BINARY)
+            const imageResponse = await axios.get(imageUrl, {
+              responseType: 'arraybuffer'
+            })
+
+            // 👇 Convert binary to Blob/File
+            const mimeType = block.data.file.mime || 'image/jpeg';
+            const buffer = imageResponse.data;
+            const file = new File([buffer], 'editor-image.jpg', { type: mimeType });
+
+            // 👇 Upload using FormData (required for multer backend)
+            const formData = new FormData();
+            formData.append('image', file);
+            formData.append('name', block.data.caption || 'Image');
+            formData.append('desc', block.data.caption || '');
+
+            await axios.post(`${backEndUrl}/api/images`, formData)
+            console.log('✅ Image sent as JSON to MongoDB');
+          } catch (err) {
+            console.error('❌ Failed to upload image:', err);
+          }
+        }
+      } catch (error) {
+        console.error("saving failed", error)
+      };
+    }
+  }
+
+  return (
+    <>
+      <div>
+        <div 
+          id="editorjs" 
+          style={{ border: '2px solid blue', padding: '4px', minHeight: '300px' }} 
+        />
+        <div className='btnDiv flex gap-3 mx-3 justify-center'>
+          <button onClick={handlePreview}>
+            preview
+          </button>
+          <button onClick={handleSubmit}>
+            submit
+          </button>
+        </div>
+      </div>
+
+      <div>
+        <RenderedEditorJsContent editorJsData={editorJsData} />
+      </div>
+    </>
+  )
+}
+export default EditorJs
+```
+
+# νεο κομπονεντ που να κάνει map και να προβαλει τα ποστ
+### αλλαγή στο back
+#### backend\controllers\post.controller.js
+```js
+const getAllPosts = async (req, res) => {
+  try {
+    const posts = await postDao.getAllPosts()
+    res.status(201).json(posts);
+  } catch (err) {
+    res.status(500).json({ error: 'Server error while fetching posts' })
+  }
+}
+```
+
+#### backend\routes\post.routes.js
+```js
+router.get('/', postControler.getAllPosts)
+```
+
+### προσθήκες στο front
+#### frontend\src\App.jsx
+```jsx
+import Posts from './pages/Posts'
+function App() {
+  const [editorJsData, setEditorJsData] = useState({})
+  return (
+    <>
+      <BrowserRouter>
+          <Routes>
+            <Route
+              path="/posts"
+              element={<Posts 
+                backEndUrl={backEndUrl}
+              />}
+            />
+          </Routes>
+      </BrowserRouter>
+    </>
+  )
+}
+```
+
+#### frontend\src\pages\HomePage.jsx
+```jsx
+  const navigate = useNavigate()
+  const navigateToPosts = () => {
+    navigate("/posts")
+  }
+  return (
+    <>
+      <div>
+        <h3>View all posts</h3>
+        <div className='btnDiv flex gap-3 mx-3 justify-center'>
+          <button onClick={navigateToPosts}>
+            Posts
+          </button>
+        </div>
+      </div>
+    </>
+  );
+```
+#### frontend\src\pages\Posts.jsx
+```jsx
+import { useState, useEffect } from "react"
+import axios from 'axios';
+
+const Posts = ({ backEndUrl }) => {
+  const [loading, setLoading] = useState(true)
+  const [posts, setPosts] = useState([])
+
+  useEffect(() => {
+    const fetchPosts = async () => {
+      try {
+        const response = await axios.get(`${backEndUrl}/api/posts`);
+        setPosts(response.data); 
+        setLoading(false);
+      } catch (error) {
+        console.error("Error fetching posts:", error);
+        setLoading(false); 
+      }
+    };
+    
+    fetchPosts();
+  }, [backEndUrl]);
+
+  return (
+    <>
+      {loading && <p>Loading...</p>}
+      {!loading && posts.length === 0 && <p>No posts found</p>}
+      <ul>
+        {!loading && posts.length !== 0 &&
+          posts.map((post) => (
+            <li key={post._id}>
+                {/* JSON.stringify(post.content, null, 2) → turns the post.content object into a string. Wrapping it in <pre>...</pre> → preserves the whitespace and line breaks in HTML*/}
+              <pre>{JSON.stringify(post.content, null, 2)}</pre>
+              <p>{new Date(post.createdAt).toLocaleString()}</p>
+            </li>
+          ))
+        }
+      </ul>
+    </>
+  )
+}
+export default Posts
+```
+
+- το προβλημα εδώ είναι οτι η προβολή δεν είναι οπως θα έπρεπε 
+```jsx
+        {!loading && posts.length !== 0 &&
+          posts.map((post) => (
+            <li key={post._id}>
+                {/* JSON.stringify(post.content, null, 2) → turns the post.content object into a string. Wrapping it in <pre>...</pre> → preserves the whitespace and line breaks in HTML*/}
+              {/* <pre>{JSON.stringify(post.content, null, 2)}</pre> */}
+              <RenderedEditorJsContent editorJsData={post.content} />
+              <p>{new Date(post.createdAt).toLocaleString()}</p>
+            </li>
+          ))
+        }
+```
+
+### tailwind και αλλάγές ωστε να προβάλει μέχρι 70 λεξεις και την πρώτη μόνο εικόνα
+#### frontend\src\pages\Posts.jsx
+```jsx
+import { useState, useEffect } from "react"
+import axios from 'axios';
+import RenderedEditorJsContent from "../components/RenderedEditorJsContent";
+
+const Posts = ({ backEndUrl }) => {
+  const [loading, setLoading] = useState(true)
+  const [posts, setPosts] = useState([])
+
+  useEffect(() => {
+    const fetchPosts = async () => {
+      try {
+        const response = await axios.get(`${backEndUrl}/api/posts`);
+        setPosts(response.data); 
+        setLoading(false);
+      } catch (error) {
+        console.error("Error fetching posts:", error);
+        setLoading(false); 
+      }
+    };
+    
+    fetchPosts();
+  }, [backEndUrl]);
+
+  // αυτή η συνάρτηση κρατάει μόνο την πρώτη εικόνα και τις πρώτες 70 λέξεις. Σε μεγάλο βαθμό απο GPT
+  const getPreviewContent = (content, maxWords = 70) => {
+    const previewBlocks = [];
+    let wordCount = 0;
+    let imageIncluded = false;
+
+    for (const block of content.blocks) {
+      if (block.type === 'image' && !imageIncluded) {
+        previewBlocks.push(block);
+        imageIncluded = true;
+      }
+
+      if (block.type === 'paragraph') {
+        const words = block.data.text.split(/\s+/);
+        const remaining = maxWords - wordCount;
+
+        if (remaining <= 0) break;
+
+        const trimmedWords = words.slice(0, remaining);
+        previewBlocks.push({
+          ...block,
+          data: {
+            ...block.data,
+            text: trimmedWords.join(' ') + (words.length > remaining ? '...' : '')
+          }
+        });
+
+        wordCount += trimmedWords.length;
+      }
+
+      if (wordCount >= maxWords && imageIncluded) break;
+    }
+
+    return {
+      ...content,
+      blocks: previewBlocks
+    };
+  };
+
+  return (
+    <>
+      <h1 className="text-2xl font-bold mb-4 text-center">All Posts</h1>
+      <div className="p-4 max-w-4xl mx-auto">
+        {loading && <p>Loading...</p>}
+        {!loading && posts.length === 0 && <p>No posts found</p>}
+
+        <div className="grid gap-6">
+            {!loading && posts.length !== 0 &&
+              posts.map((post) => (
+                <div 
+                  key={post._id}
+                  className="bg-slate-100 text-black shadow-md rounded-2xl p-6 border border-gray-300 hover:shadow-lg transition-shadow"
+                >
+                  <RenderedEditorJsContent editorJsData={getPreviewContent(post.content)} />
+                  <p className="text-sm text-gray-500 mt-4">
+                    {new Date(post.createdAt).toLocaleString()}
+                  </p>
+                </div>
+              ))
+            }        
+        </div>    
+      </div>
+    </>
+  )
+}
+export default Posts
+```
+
+# Προβολή ενώς μόνο blog post
+## back αλλαγες για get με id ένα Post
+#### backend\app.js
+- δεν άλλαξε κατι εδώ
+```js
+app.use('/api/posts', postRoutes)
+```
+#### backend\daos\post.dao.js
+```js
+const getPostById = async (postId) => {
+  return await Post.findById(postId);
+};
+
+module.exports = {
+  getAllPosts,
+  getPostById,
+  createPost,
+};
+```
+
+#### backend\controllers\post.controller.js
+```js
+const getPostById = async (req, res) => {
+  const { postId } = req.params;
+  try {
+    const post = await postDao.getPostById(postId);
+    if (!post) {
+      return res.status(404).json({ error: 'Post not found' });
+    }
+    res.status(200).json(post);
+  } catch (error) {
+    console.error('Get Post Error:', error);
+    res.status(500).json({ error: error.message });
+  }
+};
+
+module.exports = {
+  createPost,
+  getPostById,
+  getAllPosts,
+};
+```
+
+#### backend\routes\post.routes.js
+```js
+/**
+ * @swagger
+ * /api/posts/{postId}:
+ *   get:
+ *     summary: Get a post by ID
+ *     tags: [Posts]
+ *     parameters:
+ *       - in: path
+ *         name: postId
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Post data
+ *       404:
+ *         description: Post not found
+ *       500:
+ *         description: Server error
+ */
+router.get('/:postId', postControler.getPostById);
+```
+
+## front αλλαγές με Link για προβολή ενώς ποστ με Id
+#### frontend\src\App.jsx
+```jsx
+  <Route path="/posts/:id" element={<BlogPost backEndUrl={backEndUrl} />} />
+```
+
+
+- problem in rendering `<b> <br>`
+
 
 

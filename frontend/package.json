@@ -17,6 +17,7 @@
     "@editorjs/list": "^2.0.8",
     "@editorjs/marker": "^1.4.0",
     "@editorjs/paragraph": "^2.11.7",
+    "@tailwindcss/vite": "^4.1.11",
     "axios": "^1.10.0",
     "editorjs-html": "^4.0.5",
     "editorjs-indent-tune": "^1.4.3",
@@ -26,7 +27,8 @@
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
     "react-editor-js": "^2.1.0",
-    "react-router": "^7.6.2"
+    "react-router": "^7.6.2",
+    "tailwindcss": "^4.1.11"
   },
   "devDependencies": {
     "@eslint/js": "^9.25.0",
