@@ -1,6 +1,6 @@
 import axios from 'axios';
 import { useState, useEffect } from "react"
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate  } from 'react-router-dom';
 import RenderedEditorJsContent from "../components/RenderedEditorJsContent";
 
 const BlogPost = ({ backEndUrl }) => {
@@ -8,6 +8,7 @@ const BlogPost = ({ backEndUrl }) => {
   const [post, setPost] = useState(null)
 
   const { id } = useParams();
+  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchPost = async () => {
@@ -25,6 +26,10 @@ const BlogPost = ({ backEndUrl }) => {
       fetchPost();
     }
   }, [backEndUrl, id]);
+
+  const navigateToHome = () => {
+    navigate('/');
+  }
 
   return (
     <>
@@ -44,6 +49,14 @@ const BlogPost = ({ backEndUrl }) => {
                   <p className="text-sm text-gray-500 mt-4">
                     {new Date(post.createdAt).toLocaleString()}
                   </p>
+                  <div className='btnDiv flex gap-3 mx-3 justify-center'>
+                    <button 
+                      onClick={navigateToHome}
+                      className='bg-blue-500 text-white px-4 py-2 rounded'
+                    >
+                      Home
+                    </button>
+                  </div>
                 </div>
 
             }        
