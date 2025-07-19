@@ -22,7 +22,7 @@ const App = () => {
   const [editorJsData, setEditorJsData] = useState({})
  
   // const backEndUrl = 'http://localhost:3001'
-  const backEndUrl = 'https://anamesa.onrender.com'
+  const backEndUrl = 'https://bloganddashboard.onrender.com'
   
   const {
     admin,
