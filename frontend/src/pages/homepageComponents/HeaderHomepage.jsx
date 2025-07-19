@@ -36,12 +36,12 @@ const HeaderHomepage = ({ backEndUrl, admin, handleLogout }) => {
       >
         <h1 
           className="text-xl font-bold"
-                      onClick={() => {
+            onClick={() => {
               // Navigate to homepage
               navigate("/")
             }}
           >
-            <i>[→]</i>
+            <i>my blog CMS editor</i>
         </h1>
         <div className="relative">
 
