@@ -4,7 +4,7 @@ const IntroHome = () => {
   return (
     <>
     <div
-      className="flex flex-col items-center text-center px-4"
+      className="flex flex-col items-center text-center px-4 w-3/5"
     >
       <img src="/welcome.png" alt="" />
       <p className="max-w-3xl mx-auto text-justify leading-relaxed text-gray-800 text-lg px-4 sm:px-6 md:px-8">
