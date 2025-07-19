@@ -40,13 +40,13 @@ git tag -l
 ```bash
 User@DESKTOP-PD058OQ MINGW64 /e/coding/BlogAndDashboard (wip)
 git add .
-git commit -m "deploy8"
+git commit -m "docs: adding documentation"
 git push origin wip
 git checkout main
 git reset --soft HEAD~1
 git checkout wip -- .
 git add .
-git commit -m "deploy"
+git commit -m "docs: adding documentation"
 git push origin main --force
 git log main --oneline
 git checkout wip

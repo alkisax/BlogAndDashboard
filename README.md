@@ -6,10 +6,9 @@ You can **pin posts** for quick access, create **subpages (categories)**, and ma
 There is also an **upload files viewer** for managing media assets.  
 The **home page** displays a welcome message, **pinned posts**, and the **three latest posts**.
 
-- app is deployed on: https://bloganddashboard.onrender.com
-- github repo: https://bloganddashboard.onrender.com
-- read me: 
-
+- **App Deployment:** [https://bloganddashboard.onrender.com](https://bloganddashboard.onrender.com)
+- **GitHub Repository:** [https://github.com/alkisax/BlogAndDashboard](https://github.com/alkisax/BlogAndDashboard)
+- **README:** [README.md](https://github.com/alkisax/BlogAndDashboard/blob/main/README.md)
 ---
 
 ## **Tech Stack**
@@ -110,3 +109,22 @@ http://localhost:3001/api-docs
 (or your production backend URL).
 
 ## Screenshots
+## Screenshots
+
+### CMS Editor
+![CMS Editor](https://github.com/alkisax/BlogAndDashboard/blob/main/screenShots/cmsEditor.png)
+
+### Files Viewer
+![Files](https://github.com/alkisax/BlogAndDashboard/blob/main/screenShots/files.png)
+
+### Homepage
+![Homepage](https://github.com/alkisax/BlogAndDashboard/blob/main/screenShots/homepage.png)
+
+### Login
+![Login](https://github.com/alkisax/BlogAndDashboard/blob/main/screenShots/login.png)
+
+### Post View
+![Post View](https://github.com/alkisax/BlogAndDashboard/blob/main/screenShots/postView.png)
+
+### Subpage
+![Subpage](https://github.com/alkisax/BlogAndDashboard/blob/main/screenShots/subpage.png)
