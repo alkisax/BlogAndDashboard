@@ -1,0 +1,82 @@
+{
+  "hash": "8735e0f8",
+  "configHash": "eb42834c",
+  "lockfileHash": "76bffc31",
+  "browserHash": "04d9e140",
+  "optimized": {
+    "react": {
+      "src": "../../node_modules/react/index.js",
+      "file": "react.js",
+      "fileHash": "518f5d33",
+      "needsInterop": true
+    },
+    "react-dom/client": {
+      "src": "../../node_modules/react-dom/client.js",
+      "file": "react-dom_client.js",
+      "fileHash": "8fdec67e",
+      "needsInterop": true
+    },
+    "react-router": {
+      "src": "../../node_modules/react-router/dist/development/index.mjs",
+      "file": "react-router.js",
+      "fileHash": "df8c9d7e",
+      "needsInterop": false
+    },
+    "@editorjs/editorjs": {
+      "src": "../../node_modules/@editorjs/editorjs/dist/editorjs.mjs",
+      "file": "@editorjs_editorjs.js",
+      "fileHash": "d547c008",
+      "needsInterop": false
+    },
+    "@editorjs/paragraph": {
+      "src": "../../node_modules/@editorjs/paragraph/dist/paragraph.mjs",
+      "file": "@editorjs_paragraph.js",
+      "fileHash": "d4263372",
+      "needsInterop": false
+    },
+    "@editorjs/header": {
+      "src": "../../node_modules/@editorjs/header/dist/header.mjs",
+      "file": "@editorjs_header.js",
+      "fileHash": "f739c498",
+      "needsInterop": false
+    },
+    "@editorjs/list": {
+      "src": "../../node_modules/@editorjs/list/dist/editorjs-list.mjs",
+      "file": "@editorjs_list.js",
+      "fileHash": "d56be6c9",
+      "needsInterop": false
+    },
+    "@editorjs/marker": {
+      "src": "../../node_modules/@editorjs/marker/dist/marker.mjs",
+      "file": "@editorjs_marker.js",
+      "fileHash": "a0b29d1a",
+      "needsInterop": false
+    },
+    "@editorjs/inline-code": {
+      "src": "../../node_modules/@editorjs/inline-code/dist/inline-code.mjs",
+      "file": "@editorjs_inline-code.js",
+      "fileHash": "3cc596b8",
+      "needsInterop": false
+    },
+    "@editorjs/image": {
+      "src": "../../node_modules/@editorjs/image/dist/image.mjs",
+      "file": "@editorjs_image.js",
+      "fileHash": "30817eb8",
+      "needsInterop": false
+    },
+    "editorjs-text-alignment-blocktune": {
+      "src": "../../node_modules/editorjs-text-alignment-blocktune/dist/bundle.js",
+      "file": "editorjs-text-alignment-blocktune.js",
+      "fileHash": "a0b592c0",
+      "needsInterop": true
+    }
+  },
+  "chunks": {
+    "chunk-KS2M7ZJI": {
+      "file": "chunk-KS2M7ZJI.js"
+    },
+    "chunk-5WRI5ZAA": {
+      "file": "chunk-5WRI5ZAA.js"
+    }
+  }
+}
